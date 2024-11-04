@@ -6,12 +6,23 @@
     <link rel="stylesheet" href="WindowCSS.css">
 </head>
 <body>
-<div id="chatbot">
-    <div id="chat-window">
-        <div id="messages"></div>
+<div id="container">
+    <div id="clickable-window" style="display: none;">
+        <button id="close-clickable-window">Close</button>
+        <h2>Clickable Word</h2>
+        <p>This is where the clickable word content will be displayed.</p>
     </div>
-    <label for="user-input"></label><input type="text" id="user-input" placeholder="Type a message..." />
-    <button id="View Stats">View Stats</button>
+    <div id="chatbot">
+        <div id="chat-window">
+            <div id="messages"></div>
+        </div>
+        <input type="text" id="user-input" placeholder="Type a message..." />
+        <button id="view-stats">View Stats</button>
+    </div>
+    <div id="stats-window" style="display: none;">
+        <h2>Stats</h2>
+        <p>This is where the stats will be displayed.</p>
+    </div>
 </div>
 <script src="UI.js"></script>
 </body>

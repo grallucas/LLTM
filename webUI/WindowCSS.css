@@ -13,7 +13,6 @@ body, html {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: #f9f9f9;
 }
-
 #chat-window {
     height: 200px;
     overflow-y: auto;
@@ -29,8 +28,7 @@ body, html {
     margin-bottom: 10px;
     border: 1px solid #ddd;
 }
-
-#open-video {
+#view-stats {
     width: 100%;
     padding: 10px;
     background-color: #28a745;
@@ -39,6 +37,42 @@ body, html {
     cursor: pointer;
     margin-top: 10px;
 }
-#open-video:hover {
+#view-stats:hover {
     background-color: #218838;
+}
+
+#stats-window {
+    width: 300px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-left: 20px; /* Space between chat and stats window */
+}
+#container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 80%;
+}
+#clickable-window {
+    width: 300px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 20px; /* Space between clickable window and chat window */
+}
+#close-clickable-window {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#close-clickable-window:hover {
+    background-color: #c82333;
 }

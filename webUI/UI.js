@@ -1,5 +1,6 @@
 
 //Big ups to the bbg copilot <3
+//fix g bug
 document.getElementById('user-input').addEventListener('keypress', function(evt) {
     const userInput = document.getElementById('user-input');
     const message = userInput.value;
@@ -8,7 +9,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
         const words = text.split(' ');
         const randomIndex = Math.floor(Math.random() * words.length);
         words[randomIndex] = `<a href="#" style="text-decoration: underline; text-decoration-color: red; color: black;" 
-  onclick="openNewWindow('${words[randomIndex]}')">${words[randomIndex]}</a>`;
+  onclick="openClickableWindow('${words[randomIndex]}')">${words[randomIndex]}</a>`;
         return words.join(' ');
     }
 
@@ -18,11 +19,6 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
         respondToUser(message);
     }
 });
-
-document.getElementById('View Stats').addEventListener('click', function() {
-    openVideoWindow();
-});
-
 function addMessage(message) {
     const messagesDiv = document.getElementById('messages');
     const messageElement = document.createElement('div');
@@ -31,6 +27,13 @@ function addMessage(message) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+document.getElementById('view-stats').addEventListener('click', function() {
+    toggleStatsWindow();
+});
+
+document.getElementById('close-clickable-window').addEventListener('click', function() {
+    closeClickableWindow();
+});
 function respondToUser(message) {
     // Simple response logic
     let response = "I didn't understand that.";
@@ -41,40 +44,34 @@ function respondToUser(message) {
     }
     addMessage('Bot: ' + response);
 }
-
-function openNewWindow(word) {
-    window.open('', 'NewWindow', 'width=600,height=400').document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>${word}</title>
-        </head>
-        <body>
-            <h1>${word}</h1>
-            <p>This is a new window opened by clicking the underlined word.</p>
-        </body>
-        </html>
-    `);
+function toggleStatsWindow() {
+    const statsWindow = document.getElementById('stats-window');
+    if (statsWindow.style.display === 'none') {
+        statsWindow.style.display = 'block';
+    } else {
+        statsWindow.style.display = 'none';
+    }
 }
 
-function openVideoWindow() {
-    const videoWindow = window.open('', 'Video', 'width=600,height=400');
-    videoWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>Video</title>
-        </head>
-        <body>
-            <video width="100%" controls>
-                <source src="videoplayback.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-                video.volume = 1.0;
-                video. Muted = false; 
-            </video>
-        </body>
-        </html>
-    `);
+// Re-attach the event listener for the close button
+document.getElementById('close-clickable-window').addEventListener('click', function() {
+    closeClickableWindow();
+});
+
+function closeClickableWindow() {
+    const clickableWindow = document.getElementById('clickable-window');
+    clickableWindow.style.display = 'none';
 }
+
+function openClickableWindow(word) {
+    const clickableWindow = document.getElementById('clickable-window');
+    clickableWindow.innerHTML = `
+        <button id="close-clickable-window">Close</button>
+        <h2>${word}</h2>
+        <p>This is a new window opened by clicking the underlined word.</p>
+    `;
+    clickableWindow.style.display = 'block';
+}
+
+
+
