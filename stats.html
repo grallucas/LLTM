@@ -8,26 +8,34 @@
 </head>
 <body>
     <div class="container">
+        <select id="language-selector"></select>
         <h1>Language Learning Statistics</h1>
         <div class="stats">
             <div id="learned" class="stat-box">
                 <h2>Words Learned</h2>
-                <p id="learned-percentage">0%</p>
+                <p id="learned-count"></p>
             </div>
-            <div id="unknown" class="stat-box">
-                <h2>Unknown Words</h2>
-                <p id="unknown-percentage">0%</p>
+            <div id="conversations" class="stat-box">
+                <h2>Conversations</h2>
+                <p id="conversations-count"></p>
             </div>
-            <div id="review" class="stat-box">
-                <h2>Words to Review</h2>
-                <p id="review-percentage">0%</p>
+            <div id="rosie-score" class="stat-box">
+                <h2>Rosie Score</h2>
+                <p id="rosie-score-number"></p>
             </div>
         </div>
+        <canvas id="donut-chart" aria-label="chart" height="350" width="580"></canvas>
         <div class="encouragement">
             <p id="encouragement-message">Keep up the great work! Every word you learn brings you closer to fluency!</p>
         </div>
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.1/chart.min.js"></script>
+    <script
+        src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+        integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
+        crossorigin="anonymous">
+    </script>
     <script src="script.js"></script>
+    
 </body>
 </html>

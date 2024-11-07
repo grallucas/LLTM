@@ -1,24 +1,53 @@
-// Example data
-const stats = {
-    totalWords: 100,
-    learnedWords: 70,
-    unknownWords: 20,
-    reviewWords: 10,
-};
+const SUPPORTED_LANGUAGES = ["FRENCH", "SPANISH", "JAPANESE"]
+const STATS_ENDPOINT = "https://2e103ef1-ab2c-4a75-a746-283686ee43b7.mock.pstmn.io/stats/"
 
-// Calculate percentages
-const learnedPercentage = (stats.learnedWords / stats.totalWords) * 100;
-const unknownPercentage = (stats.unknownWords / stats.totalWords) * 100;
-const reviewPercentage = (stats.reviewWords / stats.totalWords) * 100;
+let chartId = undefined
 
-// Update the HTML with calculated values
-document.getElementById('learned-percentage').innerText = `${learnedPercentage.toFixed(2)}%`;
-document.getElementById('unknown-percentage').innerText = `${unknownPercentage.toFixed(2)}%`;
-document.getElementById('review-percentage').innerText = `${reviewPercentage.toFixed(2)}%`;
+$(document).ready(function() {  
+    $.each(SUPPORTED_LANGUAGES, function(index, value) {
+      $('#language-selector').append($('<option>', {
+        value: value,
+        text: value
+      }));
+    });
+    updateStats($("#language-selector").val())
+    $('#language-selector').on('change', function(e) {
+        updateStats($(this).val())
+    });
+  });
 
-// Optional: Change encouragement message based on learning progress
-const encouragementMessage = 
-    learnedPercentage >= 75 
-    ? "You're doing fantastic! Keep it up!" 
-    : "Keep up the great work! Every word you learn brings you closer to fluency!";
-document.getElementById('encouragement-message').innerText = encouragementMessage;
+const requestStats = async (language)=>{
+    res = await fetch(STATS_ENDPOINT+language)
+    json = await res.json()
+    return json
+}
+
+const updateStats = (language)=>{
+    requestStats(language).then((stats)=>{
+        console.log(stats)
+        $("#learned-count").text(stats.learnedWords)
+        $("#conversations-count").text(stats.conversations)
+        $("#rosie-score-number").text(stats.rosieScore)
+
+        let donutChart = document.getElementById("donut-chart").getContext("2d");
+        if(chartId){
+            chartId.destroy()
+        }
+        chartId = new Chart(donutChart, {
+        type: 'pie',
+        data: {
+            labels: ["Master", "Proficient", "Beginner"],
+            datasets: [{
+                label: "Mastery",
+                data: [stats.mastery.mastered, stats.mastery.proficient, stats.mastery.beginner],
+                backgroundColor: ['yellow', 'aqua', 'pink'],
+                hoverOffset: 5
+            }],
+        },
+        options: {
+            responsive: false,
+        },
+        });
+    })
+}
+
