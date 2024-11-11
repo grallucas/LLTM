@@ -1,6 +1,7 @@
 from fsrs import FSRS, Card, Rating, ReviewLog, State
 from sortedcontainers import sorteddict
 from datetime import datetime, timezone
+import json
 
 class SRS:
     """
@@ -64,6 +65,7 @@ class SRS:
     def get_card(self, word : str) -> Card:
         return self.words[word]
 
+    # TODO: return python dict instead
     def get_words(self) -> sorteddict:
         return self.words
 
@@ -90,5 +92,15 @@ class SRS:
     def num_words(self) -> int:
         return len(self.words)
 
+    def output(self):
+        
+        card_dict = {}
+        for i in dict(self.words):
+            card_dict[i] = self.words[i].to_dict()
+        json_output = json.dumps(card_dict)
+        print(json_output)
+            
 
+
+# TODO: add requirements.txt
 
