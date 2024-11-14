@@ -1,4 +1,5 @@
 import os
+import json
 import getpass
 from dataclasses import dataclass
 from llama_cpp import Llama, LogitsProcessorList, LlamaGrammar
@@ -94,16 +95,20 @@ class LLM:
             hist += f'{msg.role} --- {msg.content}\n__________\n\n'
         return hist
 
-    def _hist_to_prompt(self):
+    def _hist_to_prompt(self, response_format):
         # TODO: this will handle the model-specific formatting stuff
 
         prompt = ''
         for msg in self._hist:
             if msg.role == 'system' or msg.role == 'user': prompt += f'[INST]{msg.content}[/INST]'
             elif msg.role == 'assistant': prompt += f'{msg.content}'
+
+        if type(response_format) is dict:
+            prompt += f'\n\n\nRespond in JSON using this format and absolutely nothing extra:\n{response_format}'
+
         return prompt
 
-    def __call__(self, msg:str, resposne_format:str=None, **kwargs):
+    def __call__(self, msg:str, response_format:str=None, **kwargs):
         '''
         response_format: None | dict | 'stream'
             None - output raw text
@@ -111,19 +116,45 @@ class LLM:
             'stream' - output a generator of raw text
         '''
         self._hist.append(Msg('user', msg))
-        prompt = self._hist_to_prompt()
+        prompt = self._hist_to_prompt(response_format)
 
-        raw = LLM_GLOBAL_INSTANCE(
-            prompt,
-            # grammar = grammar,
-            # stream=True,
-            **kwargs
-        )
-        resp = raw['choices'][0]['text']
+        if response_format is None:
+            raw = LLM_GLOBAL_INSTANCE(
+                prompt,
+                **kwargs
+            )
+            resp = raw['choices'][0]['text']
 
-        inc_tok_count('in', raw['usage']['prompt_tokens'])
-        inc_tok_count('out', raw['usage']['completion_tokens'])
+            inc_tok_count('in', raw['usage']['prompt_tokens'])
+            inc_tok_count('out', raw['usage']['completion_tokens'])
 
-        self._hist.append(Msg('assistant', resp))
+            self._hist.append(Msg('assistant', resp))
 
-        return resp, raw
+            return resp
+        elif type(response_format) is dict:
+            raw = LLM_GLOBAL_INSTANCE(
+                prompt,
+                grammar = LLM._json_grammar,
+                **kwargs
+            )
+            resp = json.loads(raw['choices'][0]['text'])
+
+            inc_tok_count('in', raw['usage']['prompt_tokens'])
+            inc_tok_count('out', raw['usage']['completion_tokens'])
+
+            self._hist.append(Msg('assistant', resp))
+
+            return resp
+        elif response_format == 'stream':
+            raise Exception('TODO')
+        else:
+            raise Exception(f'Unsupported Response Format: {response_format}')
+
+
+    def tokenize(self, s:str):
+        global LLM_GLOBAL_INSTANCE
+        return LLM_GLOBAL_INSTANCE.tokenize(bytes(s, encoding='utf-8'), add_bos=False)
+
+    def detokenize(self, toks:list[int]):
+        global LLM_GLOBAL_INSTANCE
+        return LLM_GLOBAL_INSTANCE.detokenize(toks).decode()
