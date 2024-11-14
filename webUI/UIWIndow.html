@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <link rel="stylesheet" href="WindowCSS.css">
+    <script src="UI.js"></script>
 </head>
 <body>
 <div id="container">
@@ -15,13 +16,17 @@
     <div id="chatbot">
         <div id="chat-window">
             <div id="messages"></div>
+            <img id="corner-image" src="hotgirl.jpg" alt="Corner Image">
         </div>
         <input type="text" id="user-input" placeholder="Type a message..." />
         <button id="view-stats">View Stats</button>
     </div>
-    <div id="stats-window" style="display: none;">
+    <div id="overlay" style="display: none;">
+    <div id="stats-window">
         <h2>Stats</h2>
         <p>This is where the stats will be displayed.</p>
+        <button id="close-stats">Close</button>
+    </div>
     </div>
 </div>
 <script src="UI.js"></script>

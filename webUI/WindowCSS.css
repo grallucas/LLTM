@@ -1,25 +1,57 @@
 body, html {
     height: 100%;
+    width: 100%;
     margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-
+#messages {
+    display: flex;
+    flex-direction: column;
+}
+.user-message {
+    align-self: flex-end;
+    background-color: #dcf8c6;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 5px 0;
+    max-width: 60%;
+    word-wrap: break-word;
+}
+.bot-message {
+    align-self: flex-start;
+    background-color: #f1f0f0;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 5px 0;
+    max-width: 60%;
+    word-wrap: break-word;
+}
+.thick-line {
+    border: none;
+    height: 5px;
+    background-color: #000;
+}
 #chatbot {
-    width: 300px;
+    width: 100%;
+    height: 100%;
     padding: 20px;
+    box-sizing: border-box;
     border: 1px solid #ccc;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
 }
 #chat-window {
-    height: 200px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    padding: 10px;
-    background-color: #fff;
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        padding: 10px;
+        background-color: #fff;
+        position: relative; /* Added for positioning the image */
 }
 
 #user-input {
@@ -40,20 +72,31 @@ body, html {
 #view-stats:hover {
     background-color: #218838;
 }
-
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 #stats-window {
     width: 300px;
     padding: 20px;
     border: 1px solid #ddd;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin-left: 20px; /* Space between chat and stats window */
+    position: relative;
 }
 #container {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    width: 80%;
+    width: 100%;
+    height: 100%;
 }
 #clickable-window {
     width: 300px;
@@ -62,11 +105,14 @@ body, html {
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-right: 20px; /* Space between clickable window and chat window */
+    position: relative;
 }
-#close-clickable-window {
+#close-button-container {
     position: absolute;
     top: 10px;
     right: 10px;
+}
+#close-clickable-window {
     background-color: #dc3545;
     color: white;
     border: none;
@@ -75,4 +121,18 @@ body, html {
 
 #close-clickable-window:hover {
     background-color: #c82333;
+}
+#close-stats:hover {
+    background-color: #c82333;
+}
+#corner-image {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 50px; /* Adjust the size as needed */
+    height: 50px; /* Adjust the size as needed */
+}
+#messages {
+    height: calc(100% - 60px); /* Adjust height to leave space for the image */
+    overflow-y: auto;
 }
