@@ -63,7 +63,7 @@ class LLM:
         verbose=False
     )
 
-    def __init__(self, system_prompt:str=None):
+    def __init__(self, system_prompt:str=None, verbose=0):
         global LLM_GLOBAL_INSTANCE
         if LLM_GLOBAL_INSTANCE is None:
             print('Initializing Global LLM Instance')
@@ -74,7 +74,7 @@ class LLM:
                 n_ctx=8000,
                 model_path='/data/ai_club/llms/mistral-7b-instruct-v0.2.Q8_0.gguf',
 
-                n_gpu_layers=-1, verbose=0,
+                n_gpu_layers=-1, verbose=verbose,
                 # embedding=True
             )
         self._hist = []
@@ -137,6 +137,7 @@ class LLM:
                 grammar = LLM._json_grammar,
                 **kwargs
             )
+
             resp = json.loads(raw['choices'][0]['text'])
 
             inc_tok_count('in', raw['usage']['prompt_tokens'])
