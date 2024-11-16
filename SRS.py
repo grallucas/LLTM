@@ -98,9 +98,8 @@ class SRS:
         for i in dict(self.words):
             card_dict[i] = self.words[i].to_dict()
         json_output = json.dumps(card_dict)
-        #output_file = open("output.json", "w")
-        #json.dump(card_dict, output_file, indent=6)
-        #print(json_output)
+        output_file = open("output.json", "w")
+        json.dump(card_dict, output_file, indent=6)
             
 
 
