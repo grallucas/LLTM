@@ -21,7 +21,7 @@ h1 {
     color: #333;
 }
 
-.stats {
+#stats {
     display: flex;
     justify-content: space-between;
     margin: 20px 0;

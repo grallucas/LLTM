@@ -1,0 +1,45 @@
+{
+    "graphs" : [
+        {
+            "type" : "line",
+            "title" : "Converstations Per Day",
+            "data" : { 
+                "labels": ["Monday", "Tuesday", "Wendsday", "Thursday", "Friday", "Saturday", "Sunday"],
+                "datasets": [{
+                    "label": "Converstations Per Day",
+                    "data": [12,3,4,8,2,1,10],
+                    "fill": false,
+                    "borderColor": "rgb(75, 192, 192)",
+                    "tension": 0.1
+                }]
+            }
+        },
+        {
+            "type" : "pie",
+            "title" : "Mastery",
+            "data": {
+                "labels": ["Master", "Proficient", "Beginner"],
+                "datasets": [{
+                    "label": "Mastery",
+                    "data": [0.2,0.5,0.3],
+                    "backgroundColor": ["yellow", "aqua", "pink"],
+                    "hoverOffset": 5
+                }]
+            }
+        }
+    ],
+    "numbers" : [
+        {
+            "title" : "Stat1",
+            "data" : 1
+        },
+        {
+            "title" : "Stat2",
+            "data" : 5
+        },
+        {
+            "title" : "Stat3",
+            "data" : 20
+        }
+    ]
+}
