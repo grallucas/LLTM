@@ -1,26 +1,28 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import socket
-import getpass
+from flask import Flask,render_template,request
+from flask_socketio import SocketIO, emit
+import subprocess
+from flask_sock import Sock 
+import llm as L
+#    print(f"ssh -L 8001:{host}:8001 {getpass.getuser()}@dh-mgmt2.hpc.msoe.edu")
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        
-        self.wfile.write(b"<h1>Hello From Rosie</h1>") # TODO: put Rosé here
+app = Flask(__name__)
+socketio = SocketIO(app,debug=True,cors_allowed_origins='*',async_mode='eventlet')
+sock = Sock(app)
 
-host = socket.gethostname()
-port = 8001
 
-if __name__ == "__main__":
-    server = HTTPServer((host, port), SimpleHTTPRequestHandler)
-    print(f"Serving on http://{host}:{port}")
-    print(f"Run this on your local machine:")
-    print(f"ssh -L 8001:{host}:8001 {getpass.getuser()}@dh-mgmt2.hpc.msoe.edu")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nShutting down server.")
-        server.server_close()
+def logits_processor(prev_tok_ids, next_tok_logits):
+    return next_tok_logits
+
+@app.route('/')
+def main():
+        return "test"
+
+@sock.route('/chat/ws')
+def echo(ws):
+    llm = L.LLM('You are a British butler. Start every answer with "you"')
+    while True:
+        data = ws.receive()
+        resp = llm(data, max_tokens=20, logits_processor=[logits_processor])
+        ws.send(resp)
+
+app.run(port=8081)
