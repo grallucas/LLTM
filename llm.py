@@ -68,11 +68,11 @@ class LLM:
         if LLM_GLOBAL_INSTANCE is None:
             print('Initializing Global LLM Instance')
             LLM_GLOBAL_INSTANCE = Llama(
-                # n_ctx=4000,
-                # model_path='/data/ai_club/llms/llama-2-7b-chat.Q5_K_M.gguf',
+                n_ctx=4000,
+                model_path='/data/ai_club/llms/llama-2-7b-chat.Q5_K_M.gguf',
 
-                n_ctx=8000,
-                model_path='/data/ai_club/llms/mistral-7b-instruct-v0.2.Q8_0.gguf',
+                # n_ctx=8000,
+                # model_path='/data/ai_club/llms/mistral-7b-instruct-v0.2.Q8_0.gguf',
 
                 n_gpu_layers=-1, verbose=verbose,
                 # embedding=True
