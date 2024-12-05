@@ -118,6 +118,9 @@ class LLM:
         self._hist.append(Msg('user', msg))
         prompt = self._hist_to_prompt(response_format)
 
+        len_in = len(LLM_GLOBAL_INSTANCE.tokenize(bytes(msg, 'utf-8')))
+        inc_tok_count('in', len_in)
+
         if response_format is None:
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
@@ -125,7 +128,6 @@ class LLM:
             )
             resp = raw['choices'][0]['text']
 
-            inc_tok_count('in', raw['usage']['prompt_tokens'])
             inc_tok_count('out', raw['usage']['completion_tokens'])
 
             self._hist.append(Msg('assistant', resp))
@@ -138,16 +140,31 @@ class LLM:
                 **kwargs
             )
 
-            resp = json.loads(raw['choices'][0]['text'])
+            try:
+                resp = json.loads(raw['choices'][0]['text'])
+            except json.JSONDecodeError:
+                raise Exception(f"Couldn't Decode Json:\n{raw['choices'][0]['text']}")
 
-            inc_tok_count('in', raw['usage']['prompt_tokens'])
+
             inc_tok_count('out', raw['usage']['completion_tokens'])
 
             self._hist.append(Msg('assistant', resp))
 
             return resp
         elif response_format == 'stream':
-            raise Exception('TODO')
+            raw = LLM_GLOBAL_INSTANCE(
+                prompt,
+                stream = True,
+                **kwargs,
+            )
+
+            def tok_stream():
+                for tok in raw:
+                    tok = tok['choices'][0]['text']
+                    inc_tok_count('out', 1)
+                    yield tok
+
+            return tok_stream()
         else:
             raise Exception(f'Unsupported Response Format: {response_format}')
 
