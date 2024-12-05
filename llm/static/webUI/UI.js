@@ -6,10 +6,12 @@
 
 const socketHost = "http://localhost:8001"
 const lang = "french"
+const identity = "rozpadekk@msoe.edu"
 var llm
 
 $('document').ready(()=>{
     llm = io(socketHost);
+    llm.emit("identify", identity)
     llm.on(lang, (token) => {
         console.log(token);
         if(token == "<START>"){

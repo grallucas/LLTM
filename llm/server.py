@@ -33,6 +33,10 @@ def simulate_steam(resp):
 def handle_connect():
     print('Client connected')
 
+@socketio.on("identify")
+def identify(identity):
+    session['identity'] = identity
+
 @socketio.on("french")
 def french(prompt):
     if "french" not in session:
@@ -42,7 +46,7 @@ def french(prompt):
     french = session['french']
     #Stream not yet implemented
     #resp = llm(prompt, response_format='stream', logits_processor=[logits_processor])
-    print(prompt)
+    print(f"{session['identity']} sent : {prompt}")
     resp = french(prompt, max_tokens=50, logits_processor=[logits_processor])
     print(resp)
     #Simulate generator
@@ -52,7 +56,7 @@ def french(prompt):
 
 @socketio.on("new-french")
 def new_french():
-    french = L.LLM('You are a french explorer, respond in french')
+    french = L.LLM('You are a storyteller who speaks in french')
     session['french'] = french
 
 
