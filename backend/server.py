@@ -24,5 +24,4 @@ def echo(ws):
         data = ws.receive()
         resp = llm(data, max_tokens=20, logits_processor=[logits_processor])
         ws.send(resp)
-
 app.run(port=8081)
