@@ -3,6 +3,22 @@
 /*
  low priority - magnify window design (like textbook)
  */
+
+const socketHost = "http://localhost:8001"
+const lang = "french"
+var llm
+
+$('document').ready(()=>{
+    llm = io(socketHost);
+    llm.on(lang, (token) => {
+        console.log(token);
+        respondToUser(token)
+    });
+});
+
+
+
+
 document.getElementById('user-input').addEventListener('keypress', function(evt) {
     const userInput = document.getElementById('user-input');
     const message = userInput.value;
@@ -18,7 +34,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
     if ( evt.key === "Enter") {
         addMessage('You: ' + highlightRandomWord(message), true);
         userInput.value = '';
-        respondToUser(message);
+        //respondToUser(message);
     }
 });
 function addMessage(message, isUser = false) {
@@ -27,6 +43,7 @@ function addMessage(message, isUser = false) {
     messageElement.innerHTML = message;
     if (isUser) {
         messageElement.classList.add('user-message');
+        llm.emit(lang, message)
     } else {
         messageElement.classList.add('bot-message');
     }
@@ -59,20 +76,17 @@ document.getElementById('close-stats').addEventListener('click', function() {
 document.getElementById('close-clickable-window').addEventListener('click', function() {
     closeClickableWindow();
 });
-function respondToUser(message) {
-    // Simple response logic
-    let response = "I didn't understand that.";
-    if (message.toLowerCase().includes('hello')) {
-        response = "Hello! How can I help you today?";
-    } else if (message.toLowerCase().includes('bye')) {
-        response = "Goodbye! Have a great day!";
-    }
-    addMessage('ȒȰṦḜ: ' + response);
+function respondToUser(message) {    
+    addMessage('ȒȰṦḜ: ' + message);
 }
 function toggleStatsWindow() {
     const overlay = document.getElementById('overlay');
     if (overlay.style.display === 'none' || overlay.style.display === '') {
         overlay.style.display = 'flex';
+        $('#stats').on("load", function () {
+            $(this).height($(this).contents().height());
+            $(this).width($(this).contents().width());
+        });
     } else {
         overlay.style.display = 'none';
     }
@@ -87,3 +101,6 @@ function closeClickableWindow() {
     const clickableWindow = document.getElementById('clickable-window');
     clickableWindow.style.display = 'none';
 }
+
+
+
