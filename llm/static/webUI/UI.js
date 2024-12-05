@@ -12,7 +12,12 @@ $('document').ready(()=>{
     llm = io(socketHost);
     llm.on(lang, (token) => {
         console.log(token);
-        respondToUser(token)
+        if(token == "<START>"){
+            respondToUser("")
+        }else{
+            botMessages = $(".bot-message")
+            botMessages[botMessages.length-1].innerText += token
+        }
     });
 });
 
@@ -33,6 +38,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
     if ( evt.key === "Enter") {
         addMessage('You: ' + highlightRandomWord(message), true);
+        llm.emit(lang, message)
         userInput.value = '';
         //respondToUser(message);
     }
@@ -43,7 +49,6 @@ function addMessage(message, isUser = false) {
     messageElement.innerHTML = message;
     if (isUser) {
         messageElement.classList.add('user-message');
-        llm.emit(lang, message)
     } else {
         messageElement.classList.add('bot-message');
     }
