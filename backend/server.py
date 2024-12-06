@@ -6,7 +6,7 @@ import time
 import json
 from flask import send_from_directory
 from flask import session
-from stats import PieChart, StatView, LineGraph
+from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
 
 import sys
@@ -35,6 +35,13 @@ def stats_api(language):
         
         line = LineGraph("test2")
         line2 = LineGraph("test3")
+
+        num1 = NumericalStat("Test4", 12)
+        num2 = NumericalStat("Test5", 123123)
+        num3 = NumericalStat("Test6", 0)
+        sv.add_number(num1.construct())
+        sv.add_number(num2.construct())
+        sv.add_number(num3.construct())
 
         X = np.arange(-5,6,1)
         Y = X**2

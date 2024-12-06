@@ -67,7 +67,7 @@ class NumericalStat(Stat):
         self.value = value
 
     def construct(self):
-        return {"title": self.name, "data":self.data}
+        return {"title": self.name, "data":self.value}
         
 
 class StatView():
