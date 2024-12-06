@@ -10,6 +10,7 @@ from flask import session
 
 app = Flask(__name__)
 socketio = SocketIO(app,debug=True,cors_allowed_origins='*',async_mode='threading')
+L.LLM("")
 
 def logits_processor(prev_tok_ids, next_tok_logits):
     return next_tok_logits
@@ -23,12 +24,6 @@ def static_get(path):
     # Using request args for path will expose you to directory traversal attacks
     return send_from_directory('static', path)
 
-def simulate_steam(resp):
-    for item in resp.split(" "):
-        time.sleep(0.5)
-        token = " "+item
-        yield token
-
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
@@ -36,28 +31,26 @@ def handle_connect():
 @socketio.on("identify")
 def identify(identity):
     session['identity'] = identity
+    french = L.LLM('You are a storyteller who speaks in french')
+    session['french'] = french
 
 @socketio.on("french")
 def french(prompt):
-    if "french" not in session:
-        print("Starting french")
-        french = L.LLM('You are a storyteller who speaks in french')
-        session['french'] = french
     french = session['french']
-    #Stream not yet implemented
-    #resp = llm(prompt, response_format='stream', logits_processor=[logits_processor])
+    
     print(f"{session['identity']} sent : {prompt}")
-    resp = french(prompt, max_tokens=50, logits_processor=[logits_processor])
-    print(resp)
-    #Simulate generator
+    resp = french(prompt, response_format='stream', max_tokens=50, logits_processor=[logits_processor])
     emit("french", "<START>") 
-    for token in simulate_steam(resp):
+    for token in resp:
         emit("french", token)
+    emit("french", "<END>") 
+
 
 @socketio.on("new-french")
 def new_french():
     french = L.LLM('You are a storyteller who speaks in french')
     session['french'] = french
+
 
 
 print(socket.gethostname())

@@ -8,6 +8,7 @@ const socketHost = "http://localhost:8001"
 const lang = "french"
 const identity = "rozpadekk@msoe.edu"
 var llm
+var sendDisable = false
 
 $('document').ready(()=>{
     llm = io(socketHost);
@@ -16,6 +17,9 @@ $('document').ready(()=>{
         console.log(token);
         if(token == "<START>"){
             respondToUser("")
+            sendDisable = true
+        }else if(token == "<END>"){
+            sendDisable = false
         }else{
             botMessages = $(".bot-message")
             botMessages[botMessages.length-1].innerText += token
@@ -38,7 +42,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
         return words.join(' ');
     }
 
-    if ( evt.key === "Enter") {
+    if ( evt.key === "Enter" && !sendDisable) {
         addMessage('You: ' + highlightRandomWord(message), true);
         llm.emit(lang, message)
         userInput.value = '';
