@@ -6,6 +6,8 @@ import time
 import json
 from flask import send_from_directory
 from flask import session
+from stats import PieChart, StatView, LineGraph
+import numpy as np
 
 import sys
 sys.path.append('../llm')
@@ -21,6 +23,32 @@ def logits_processor(prev_tok_ids, next_tok_logits):
 @app.route('/')
 def main():
         return "test"
+
+@app.route('/api/stats/<language>')
+def stats_api(language):
+    if language == 'FRENCH':
+        pie = PieChart("Test")
+        pie.add_slice("test1", 0.7)
+        pie.add_slice('test2',0.3)
+        sv = StatView()
+        sv.add_graph(pie.construct())
+        
+        line = LineGraph("test2")
+        line2 = LineGraph("test3")
+
+        X = np.arange(-5,6,1)
+        Y = X**2
+        Y2 = np.absolute(X)
+
+        for x, y in zip(X,Y):
+            line.add_point(str(x), int(y))
+        for x, y in zip(X,Y2):
+            line2.add_point(str(x), int(y))
+        sv.add_graph(line.construct())
+        sv.add_graph(line2.construct())
+
+        print(Y)
+        return sv.json()
 
 @app.route('/static/<path:path>')
 def static_get(path):

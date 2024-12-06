@@ -1,5 +1,5 @@
 const SUPPORTED_LANGUAGES = ["FRENCH", "SPANISH", "JAPANESE"]
-const STATS_ENDPOINT = "https://af38840f-296c-40a2-a758-74c815525076.mock.pstmn.io/stats/"
+const STATS_ENDPOINT = "/api/stats"
 
 let chartId = undefined
 let graphs = []
@@ -17,7 +17,7 @@ $(document).ready(function() {
   });
 
 const requestStats = async (language)=>{
-    res = await fetch(STATS_ENDPOINT+language)
+    res = await fetch(STATS_ENDPOINT+"/"+language)
     json = await res.json()
     return json
     
