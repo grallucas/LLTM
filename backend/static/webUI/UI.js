@@ -25,6 +25,10 @@ $('document').ready(()=>{
             botMessages[botMessages.length-1].innerText += token
         }
     });
+    llm.on('disconnect', ()=>{
+        confirm("Server disconnected")
+        window.location.reload()
+    })
 });
 
 
