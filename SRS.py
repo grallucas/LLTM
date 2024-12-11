@@ -98,8 +98,23 @@ class SRS:
         for i in dict(self.words):
             card_dict[i] = self.words[i].to_dict()
         json_output = json.dumps(card_dict)
-        output_file = open("output.json", "w")
-        json.dump(card_dict, output_file, indent=6)
+        #output_file = open("output.json", "w")
+        #json.dump(card_dict, output_file, indent=6)
+        return json_output
+
+    def get_due_before_date(self, date:datetime):
+        keys = self.words.keys()
+        return_list = []
+        for key in keys:
+            return_list.append(key)
+            if self.words[key].due > date:
+                break
+        return return_list
+        #get all keys
+        #iterate until due is after date
+        #store in new dict and return
+
+    
             
 
 

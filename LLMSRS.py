@@ -6,15 +6,15 @@ import re
 class LLMSRS:
     srs = SRS()
     chat_llm = L.LLM('You are language chatbot. You speak using low-level, easy to comprehend words. You end every sentence with a short quiz to see if they understand')
-    grader_llm = L.LLM('You grade the responses of a user input and flag the words that are used incorrectly')
+    grader_llm = L.LLM("you are a language teacher grading the response of a user in a conversation. Using a Python dictionary, give me the incorrect words and their reasoning from the user.")
     all_mistakes = {}
 
     def graded_response(self, user_input : str) -> str:
         resp = self.get_response(user_input)
-        # mistakes_dictionary = self.get_errors(user_input)
-        # all_mistakes.append(mistakes_dictionary)
-        # for word in mistakes_dictionary.keys():
-        #     SRS.review_card(word, 'again')
+        mistakes_dictionary = self.get_errors(user_input)
+        self.all_mistakes.update(mistakes_dictionary)
+        for word in mistakes_dictionary.keys():
+            self.srs.review_card(word, 'again')
         return resp
 
 
@@ -24,8 +24,8 @@ class LLMSRS:
 
     #TODO: results in JSONDecodeError (due to dictionary format?)
     def get_errors(self, user_input : str) -> dict[str, str]: # {'word':'reason'}
-        mistakes_dictionary = {'word':'reason'}
-        mistakes = self.grader_llm(user_input, mistakes_dictionary)
+        mistakes_dictionary = {'words': 'list of ["word1", ...]', 'reasons': 'list of ["reason1", ...]'}
+        mistakes = self.grader_llm(user_input, mistakes_dictionary, max_tokens=1000)
         # grader_llm.get_pretty_hist() # print output for debugging
         return mistakes
 
@@ -38,5 +38,10 @@ class LLMSRS:
         return next_tok_logits
 
 if __name__ == '__main__':
+    from datetime import datetime, timezone
     llm = LLMSRS()
-    print(llm.graded_response("hello"))
+    print(llm.graded_response("Hi! This is my response. I'm typing back to you wiht some erors in here. "))
+    now = datetime.now(timezone.utc)
+    print(llm.graded_response("Hi! This is my response. I'm typing back to you wiht some erors in here. I thik its going to be a great day today! The sun is shining and i can’t wait to get out and enjoy the weather. Hope you hav a good time too!"))
+    print(llm.srs.get_due_before_date(now))
+    print(llm.all_mistakes)
