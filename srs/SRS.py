@@ -92,15 +92,16 @@ class SRS:
     def num_words(self) -> int:
         return len(self.words)
 
-    def output(self):
-        
+    def output(self) -> dict:
         card_dict = {}
         for i in dict(self.words):
             card_dict[i] = self.words[i].to_dict()
-        json_output = json.dumps(card_dict)
+
+        # json_output = json.dumps(card_dict)
         #output_file = open("output.json", "w")
         #json.dump(card_dict, output_file, indent=6)
-        return json_output
+
+        return card_dict
 
     def get_due_before_date(self, date:datetime):
         keys = self.words.keys()
