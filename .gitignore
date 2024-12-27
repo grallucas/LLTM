@@ -1,3 +1,4 @@
 llm_core/__pycache__/**
 srs/__pycache__/**
-.ipynb_checkpoints/**
+llm_core/.ipynb_checkpoints/**
+srs/.ipynb_checkpoints/**

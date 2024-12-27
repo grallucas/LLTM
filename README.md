@@ -9,7 +9,7 @@ Currently, this code can only be run on [Rosie](https://msoe.dev/).
 
 NOTE: a lot of imports may now be broken after the project restructure. Feel free to update imports.
 
-## How to Run Repo Notebooks in the Browser
+## How to Run Repo Notebooks in the Browser (Preferred)
 
 - Open a Git bash terminal (NOT a windows terminal)
 - SSH into Rosie (run `ssh your_rosie_username@dh-mgmt2.hpc.msoe.edu`)
