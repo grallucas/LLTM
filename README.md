@@ -1,11 +1,13 @@
-LLM Core
+LLTM
 ===
 
-This branch contains the core LLM implementation along with LLM guardrails for language learning.
+This repo contains the implementation of LLM guardrails for language learning.
 
 Llama.cpp is used for inference.
 
 Currently, this code can only be run on [Rosie](https://msoe.dev/).
+
+NOTE: a lot of imports may now be broken after the project restructure. Feel free to update imports.
 
 ## How to Run Repo Notebooks in the Browser
 
