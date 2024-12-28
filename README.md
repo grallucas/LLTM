@@ -26,7 +26,15 @@ NOTE: a lot of imports may now be broken after the project restructure. Feel fre
   - run `ssh -J your_rosie_username@dh-mgmt2.hpc.msoe.edu -L 14321:localhost:14321 your_rosie_username@dh-nodeX.hpc.msoe.edu`, **BUT** replace `dh-nodeX` with the node name specified in the first output line of `job.sh`.
 - Copy the URL from the `./job.sh` output starting with `http://localhost`, and paste it (including the token) in a browser
 
-## How To Run Repo Notebooks in VSCode
+- NOTE: all notebooks in subdirectories must include this at the top before imports (see `llm_core/vocab_restr.ipynb` for an example):
+```python
+PWD = !pwd
+if PWD[0].split('/')[-1] != 'LLTM':
+    %cd ..
+```
+- NOTE: all imports are relative to the root of this repo. Begin each import with the subdirectory name. For instance, run `import llm_core.llm` to import `llm_core/llm.py`.
+
+## How To Run Repo Notebooks in VSCode (A bit more difficult)
 
 - Open VSCode
 - In VSCode, SSH into Rosie using the [remote SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) extension which is available in the built-in VSCode extension browser.
