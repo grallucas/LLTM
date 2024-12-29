@@ -35,6 +35,8 @@ function addMessage(message, isUser = false) {
 }
 function toggleClickableWindow(word) {
     const clickableWindow = document.getElementById('clickable-window');
+    const wordParts = word.split('').join(' ');
+    const pronunciation = word.split('').join('-');
     if (clickableWindow.style.display === 'none' || clickableWindow.innerHTML.includes(word)) {
         clickableWindow.innerHTML = `
            <div id="close-button-container">
@@ -42,7 +44,13 @@ function toggleClickableWindow(word) {
            </div>
             <h2>${word}</h2>
             <hr class="thick-line">
-            <p>This is a new window opened by clicking the highlighted word.</p>
+            <p>Could be a Comment From Rose such as "Need More Help?, Try This"</p>
+            <hr class="thick-line">
+            <p><strong>Word broken down into parts:</strong>${wordParts}</p>
+            <hr class="thick-line">
+            <p><strong>Pronunciation breakdown:</strong> ${pronunciation}</p>
+            <hr class="thick-line">
+            <p>future links for more in depth information on language</p>
         `;
         clickableWindow.style.display = 'block';
         document.getElementById('close-clickable-window').addEventListener('click', closeClickableWindow);
