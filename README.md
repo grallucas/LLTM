@@ -26,7 +26,7 @@ NOTE: a lot of imports may now be broken after the project restructure. Feel fre
   - run `ssh -J your_rosie_username@dh-mgmt2.hpc.msoe.edu -L 14321:localhost:14321 your_rosie_username@dh-nodeX.hpc.msoe.edu`, **BUT** replace `dh-nodeX` with the node name specified in the first output line of `job.sh`.
 - Copy the URL from the `./job.sh` output starting with `http://localhost`, and paste it (including the token) in a browser
 
-- NOTE: all notebooks in subdirectories must include this at the top before imports (see `llm_core/vocab_restr.ipynb` for an example):
+- NOTE: all notebooks in subdirectories must include this at the top before imports (see `llm_core/test_vocab_restr.ipynb` for an example):
 ```python
 PWD = !pwd
 if PWD[0].split('/')[-1] != 'LLTM':
