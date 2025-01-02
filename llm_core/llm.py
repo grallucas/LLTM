@@ -143,7 +143,11 @@ class LLM:
                 temperature = 0
                 max_tokens = <some sufficiently LARGE number, e.g., 1000>
         '''
-        self._hist.append(Msg('user', msg, (response_format if type(response_format) is dict else None)))
+        response_format_is_special = type(response_format) in [list, dict] or response_format in [float, int, str]
+        if not type(response_format) is dict:
+            assert 0 # It's possible to have a non-dict response_format with grammars, but this remains unimplemented 
+
+        self._hist.append(Msg('user', msg, (response_format if response_format_is_special else None)))
         prompt = self._hist_to_prompt()
         _inc_tok_count('in', len(prompt))
 
@@ -159,7 +163,7 @@ class LLM:
             self._hist.append(Msg('assistant', resp))
 
             return resp
-        elif type(response_format) in [list, dict] or response_format in [float, int, str]:
+        elif response_format_is_special:
             prompt = LLM.detokenize(prompt) # IMPORTANT NOTE: This removes the <s> and </s> tokens, so it's not the best fix.
             resp = response_fmt.gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose)
             

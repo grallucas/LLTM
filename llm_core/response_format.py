@@ -136,6 +136,8 @@ def gen_response_formated_rec(LLM_GLOBAL_INSTANCE, response_format, prompt_ref, 
 
 def gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose):
     assert FORMAT_PROMPT in prompt
+    if verbose:
+        print(prompt[prompt.index(FORMAT_PROMPT):])
     json_start = len(prompt)
     prompt_ref = [prompt]
     gen_response_formated_rec(LLM_GLOBAL_INSTANCE, response_format, prompt_ref, temperature, max_tokens, verbose)
