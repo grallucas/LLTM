@@ -3,6 +3,7 @@ import json
 import getpass
 from dataclasses import dataclass
 from llama_cpp import Llama, LogitsProcessorList, LlamaGrammar
+import llm_core.response_format as response_fmt
 
 try: LLM_GLOBAL_INSTANCE
 except NameError: LLM_GLOBAL_INSTANCE = None
@@ -105,7 +106,7 @@ class LLM:
             is_last = msg == self._hist[-1]
             has_fmt = not not msg.response_format
             if has_fmt and is_last:
-                msg_content += f'\n\n\nRespond in JSON with this format: {msg.response_format}'
+                msg_content += f'\n\n\n{response_fmt.pretty_response_format(msg.response_format)}'
             if has_fmt and not is_last:
                 msg_content += '\n\n\nRespond in JSON.'
 
@@ -117,12 +118,30 @@ class LLM:
 
         return sys_prompt + remaining_prompt
 
-    def __call__(self, msg:str, response_format:str|dict=None, **kwargs):
+    def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False):
         '''
-        response_format: None | dict | 'stream'
+        response_format: None | dict | list | type(float) | type(int) | type(str) | 'stream'
             None - output raw text
-            dict - output JSON in the format of the supplied dict
             'stream' - output a generator of raw text
+            response_format - see below
+            temperature - randomness of model output
+            max_tokens - max tokens of output
+            verbose - whether to print value generation info for response_format
+            
+            This function supports arbitrary structued output supplied in `response_format` via a data structure consisting of nested dicts, lists, ints, floats, and str.
+            When supplying a list, supply it in the format [TYPE, COUNT or `...`].
+            For instance:
+                msg = "What is one capital city in Europe?"
+                response_format = {'country': str, 'capital': str, 'pop': int, 'nearest_cities': [{'name': str, 'pop': int}, 3]}
+            This example generates one capital along with a list of 3 cities, populations included for all cities.
+            The following would work for an arbitrarily-large list of nearest cities:
+                {'country': str, 'capital': str, 'pop': int, 'nearest_cities': [{'name': str, 'pop': int}, ...]}
+            
+            Note: in the case of formatted responses, max tokens is the highest number of output tokens PER JSON VALUE.
+
+            RECOMMENDED for formatted responses:
+                temperature = 0
+                max_tokens = <some sufficiently LARGE number, e.g., 1000>
         '''
         self._hist.append(Msg('user', msg, (response_format if type(response_format) is dict else None)))
         prompt = self._hist_to_prompt()
@@ -131,7 +150,8 @@ class LLM:
         if response_format is None:
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
-                **kwargs
+                temperature=temperature,
+                max_tokens=max_tokens
             )
             
             resp = raw['choices'][0]['text']
@@ -139,13 +159,21 @@ class LLM:
             self._hist.append(Msg('assistant', resp))
 
             return resp
-        elif type(response_format) is dict:
-            assert 0 # TODO
+        elif type(response_format) in [list, dict] or response_format in [float, int, str]:
+            prompt = LLM.detokenize(prompt) # IMPORTANT NOTE: This removes the <s> and </s> tokens, so it's not the best fix.
+            resp = response_fmt.gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose)
+            
+            try:
+                self._hist.append(Msg('assistant', resp))
+                return json.loads(resp)
+            except json.JSONDecodeError as e:
+                raise Exception(f'Cannot parse this JSON: {resp}')
         elif response_format == 'stream':
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
                 stream = True,
-                **kwargs,
+                temperature=temperature,
+                max_tokens=max_tokens
             )
 
             self._hist.append(Msg('assistant', ''))
