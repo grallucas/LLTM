@@ -144,7 +144,7 @@ class LLM:
                 max_tokens = <some sufficiently LARGE number, e.g., 1000>
         '''
         response_format_is_special = type(response_format) in [list, dict] or response_format in [float, int, str]
-        if not type(response_format) is dict:
+        if response_format_is_special and (not type(response_format) is dict):
             assert 0 # It's possible to have a non-dict response_format with grammars, but this remains unimplemented 
 
         self._hist.append(Msg('user', msg, (response_format if response_format_is_special else None)))
