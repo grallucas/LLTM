@@ -83,7 +83,7 @@ class LLM:
         if system_prompt is not None:
             self._hist = [Msg('system', system_prompt)] # Init hist w/ sysprompt if a new one is given
         else:
-            self._hist = self._main_hist[0:1] # Init hist w/ existing sysprompt (or empty hist) otherwise
+            self._hist = self._hist[0:1] # Init hist w/ existing sysprompt (or empty hist) otherwise
             
     def get_pretty_hist(self) -> str:
         hist = ''
