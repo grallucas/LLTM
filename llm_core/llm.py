@@ -91,13 +91,13 @@ class LLM:
             hist += f'{msg.role} --- {msg.content}\n__________\n\n'
         return hist
 
-    def _hist_to_prompt(self, inject_resp=None):
+    def _hist_to_prompt(self, system_response, inject_resp=None):
         assert 'mixtral' in MODEL_PATH # TODO: this will handle model-specific formatting. For now it just works with Mixtral
 
         [sys_msg, *hist] = self._hist
 
         assert sys_msg.role == 'system' and sys_msg.response_format is None # First message must have role=system and response_format=None
-        sys_prompt = [1, *LLM.tokenize(f'[INST] {sys_msg.content} [/INST] Understood.'), 2]
+        sys_prompt = [1, *LLM.tokenize(f'[INST] {sys_msg.content} [/INST] {system_response}'), 2]
 
         remaining_prompt = ''
         for msg in self._hist[1:]:
@@ -118,7 +118,7 @@ class LLM:
 
         return sys_prompt + remaining_prompt
 
-    def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False):
+    def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False, system_response='Understood.', **kwargs):
         '''
         response_format: None | dict | list | type(float) | type(int) | type(str) | 'stream'
             None - output raw text
@@ -148,14 +148,15 @@ class LLM:
             assert 0 # It's possible to have a non-dict response_format with grammars, but this remains unimplemented 
 
         self._hist.append(Msg('user', msg, (response_format if response_format_is_special else None)))
-        prompt = self._hist_to_prompt()
+        prompt = self._hist_to_prompt(system_response)
         _inc_tok_count('in', len(prompt))
 
         if response_format is None:
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                **kwargs
             )
             
             resp = raw['choices'][0]['text']
@@ -177,7 +178,8 @@ class LLM:
                 prompt,
                 stream = True,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                **kwargs
             )
 
             self._hist.append(Msg('assistant', ''))
