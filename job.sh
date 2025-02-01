@@ -1,6 +1,6 @@
-NUM_GPU=3
+NUM_GPU=2
 export N_CTX=8000
-export MODEL_PATH="/data/ai_club/llms/mixtral-8x7b-instruct-v0.1.Q6_K.gguf"
+export MODEL_PATH="/data/ai_club/llms/qwen2-7b-instruct-q5_k_m.gguf"
 
 srun -G${NUM_GPU} --pty bash -c "source /data/ai_club/team_3_2024-25/team3-env-py312-glibc/bin/activate; \
     hostname; \
