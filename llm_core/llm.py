@@ -91,9 +91,7 @@ class LLM:
             hist += f'{msg.role} --- {msg.content}\n__________\n\n'
         return hist
 
-    def _hist_to_prompt(self, inject_resp=None):
-        assert 'mixtral' in MODEL_PATH # TODO: this will handle model-specific formatting. For now it just works with Mixtral
-
+    def _hist_to_prompt_mixtral(self, inject_resp):
         [sys_msg, *hist] = self._hist
 
         assert sys_msg.role == 'system' and sys_msg.response_format is None # First message must have role=system and response_format=None
@@ -102,7 +100,6 @@ class LLM:
         remaining_prompt = ''
         for msg in self._hist[1:]:
             msg_content = msg.content
-
             is_last = msg == self._hist[-1]
             has_fmt = not not msg.response_format
             if has_fmt and is_last:
@@ -118,7 +115,39 @@ class LLM:
 
         return sys_prompt + remaining_prompt
 
-    def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False):
+    def _hist_to_prompt_qwen(self, inject_resp):
+        prompt = []
+
+        for msg in self._hist:
+            msg_content = msg.content
+            is_last = msg == self._hist[-1]
+            has_fmt = not not msg.response_format
+            if has_fmt and is_last:
+                msg_content += f'\n\n\n{response_fmt.pretty_response_format(msg.response_format)}'
+            if has_fmt and not is_last:
+                msg_content += '\n\n\nRespond in JSON.'
+
+            newline_if_has_next = (b'' if is_last else b'\n')
+            prompt += [
+                *LLM_GLOBAL_INSTANCE.tokenize(b'<|im_start|>' + bytes(msg.role, encoding='utf-8') + b'\n', special=True),
+                *LLM_GLOBAL_INSTANCE.tokenize(bytes(msg_content, encoding='utf-8'), special=False),
+                *LLM_GLOBAL_INSTANCE.tokenize(b'<|im_end|>' + newline_if_has_next, special=True)
+            ]
+
+            if is_last and msg.role == 'user':
+                prompt += [
+                    *LLM_GLOBAL_INSTANCE.tokenize(b'\n<|im_start|>assistant\n' + bytes(inject_resp or '', encoding='utf-8'), special=True)
+                ]
+
+        return prompt
+
+    def _hist_to_prompt(self, inject_resp=None):
+        if 'mixtral' in MODEL_PATH: return self._hist_to_prompt_mixtral(inject_resp)
+        if 'qwen' in MODEL_PATH: return self._hist_to_prompt_qwen(inject_resp)
+        raise Exception('Model type not supported')
+
+
+    def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False, **kwargs):
         '''
         response_format: None | dict | list | type(float) | type(int) | type(str) | 'stream'
             None - output raw text
@@ -155,7 +184,8 @@ class LLM:
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                **kwargs
             )
             
             resp = raw['choices'][0]['text']
@@ -164,7 +194,10 @@ class LLM:
 
             return resp
         elif response_format_is_special:
-            prompt = LLM.detokenize(prompt) # IMPORTANT NOTE: This removes the <s> and </s> tokens, so it's not the best fix.
+            # TODO: reimplement formatted generation to work with tokens instead of text.
+            # ... b/c currently, any special token strings in the message content will be parsed  
+
+            prompt = LLM_GLOBAL_INSTANCE.detokenize(prompt, special=True).decode()
             resp = response_fmt.gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose)
             
             try:
@@ -175,9 +208,10 @@ class LLM:
         elif response_format == 'stream':
             raw = LLM_GLOBAL_INSTANCE(
                 prompt,
-                stream = True,
+                stream=True,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                **kwargs
             )
 
             self._hist.append(Msg('assistant', ''))
@@ -193,59 +227,6 @@ class LLM:
             return tok_stream()
         else:
             raise Exception(f'Unsupported Response Format: {response_format}')
-
-
-        # if response_format is None:
-        #     raw = LLM_GLOBAL_INSTANCE(
-        #         prompt,
-        #         **kwargs
-        #     )
-        #     resp = raw['choices'][0]['text']
-
-        #     _inc_tok_count('out', raw['usage']['completion_tokens'])
-
-        #     self._hist.append(Msg('assistant', resp))
-
-        #     return resp
-        # elif type(response_format) is dict:
-        #     raw = LLM_GLOBAL_INSTANCE(
-        #         prompt,
-        #         grammar = LLM._json_grammar,
-        #         **kwargs
-        #     )
-
-        #     try:
-        #         resp = json.loads(raw['choices'][0]['text'])
-        #     except json.JSONDecodeError:
-        #         raise Exception(f"Couldn't Decode Json:\n{raw['choices'][0]['text']}")
-
-
-        #     _inc_tok_count('out', raw['usage']['completion_tokens'])
-
-        #     self._hist.append(Msg('assistant', resp))
-
-        #     return resp
-        # elif response_format == 'stream':
-        #     raw = LLM_GLOBAL_INSTANCE(
-        #         prompt,
-        #         stream = True,
-        #         **kwargs,
-        #     )
-
-        #     self._hist.append(Msg('assistant', ''))
-        #     msg = self._hist[-1]
-
-        #     def tok_stream():
-        #         for tok in raw:
-        #             tok = tok['choices'][0]['text']
-        #             _inc_tok_count('out', 1)
-        #             msg.content += tok
-        #             yield tok
-
-        #     return tok_stream()
-        # else:
-        #     raise Exception(f'Unsupported Response Format: {response_format}')
-
 
     def tokenize(s:str, add_bos=False):
         global LLM_GLOBAL_INSTANCE
