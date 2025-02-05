@@ -9,8 +9,6 @@ from flask import session
 from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
 
-import sys
-sys.path.append('../llm')
 import llm as L
 
 app = Flask(__name__)
