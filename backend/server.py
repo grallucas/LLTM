@@ -27,35 +27,7 @@ def main():
 @app.route('/api/stats/<language>')
 def stats_api(language):
     if language == 'FRENCH':
-        pie = PieChart("Test")
-        pie.add_slice("test1", 0.7)
-        pie.add_slice('test2',0.3)
-        sv = StatView()
-        sv.add_graph(pie.construct())
-        
-        line = LineGraph("test2")
-        line2 = LineGraph("test3")
-
-        num1 = NumericalStat("Test4", 12)
-        num2 = NumericalStat("Test5", 123123)
-        num3 = NumericalStat("Test6", 0)
-        sv.add_number(num1.construct())
-        sv.add_number(num2.construct())
-        sv.add_number(num3.construct())
-
-        X = np.arange(-5,6,1)
-        Y = X**2
-        Y2 = np.absolute(X)
-
-        for x, y in zip(X,Y):
-            line.add_point(str(x), int(y))
-        for x, y in zip(X,Y2):
-            line2.add_point(str(x), int(y))
-        sv.add_graph(line.construct())
-        sv.add_graph(line2.construct())
-
-        print(Y)
-        return sv.json()
+        return StatView.load("data/test.stats").json()
 
 @app.route('/static/<path:path>')
 def static_get(path):

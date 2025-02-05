@@ -1,6 +1,8 @@
 import json
 from abc import ABC, abstractmethod
 import random
+import pickle
+import numpy as np
 
 class Stat:
     @abstractmethod
@@ -71,6 +73,13 @@ class NumericalStat(Stat):
         
 
 class StatView():
+    def load(path):
+        with open(path, "rb") as stat_view:
+            return pickle.load(stat_view)
+    def save(self, path):
+        with open(path, "wb") as outfile:
+            pickle.dump(self, outfile)
+
     def __init__(self):
         self.graphs = []
         self.numeric_stats = []
@@ -83,3 +92,9 @@ class StatView():
 
     def json(self):
         return json.dumps({"graphs" : self.graphs, "numbers" : self.numeric_stats})
+
+    
+
+    
+
+    
