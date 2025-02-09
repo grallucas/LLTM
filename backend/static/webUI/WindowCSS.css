@@ -84,12 +84,14 @@ body, html {
     align-items: center;
 }
 #stats-window {
-    width: 300px;
-    padding: 20px;
+    
     border: 1px solid #ddd;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     position: relative;
+    width: 80vw;
+    height: 90vh;
+    
 }
 #container {
     display: flex;
@@ -122,9 +124,7 @@ body, html {
 #close-clickable-window:hover {
     background-color: #c82333;
 }
-#close-stats:hover {
-    background-color: #c82333;
-}
+
 #corner-image {
     position: absolute;
     bottom: 10px;
@@ -135,4 +135,18 @@ body, html {
 #messages {
     height: calc(100% - 60px); /* Adjust height to leave space for the image */
     overflow-y: auto;
+}
+
+#stats {
+    width: 80vw;
+    height: 100vh;
+}
+
+#close-stats {
+    position: fixed;
+    float:right;
+    top:0;
+    right:0;
+    border-radius: 25px;
+    border: 2px solid #fff;
 }
