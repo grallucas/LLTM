@@ -8,6 +8,7 @@ from flask import send_from_directory
 from flask import session
 from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
+import getpass
 
 import llm as L
 
@@ -55,6 +56,15 @@ def stats_api(language):
         print(Y)
         return sv.json()
 
+# @app.route('/stats/<path:path>')
+# def static_stats(path):
+#     return send_from_directory('stats', path)
+
+
+# @app.route('/webui/<path:path>')
+# def static_webui(path):
+#     return send_from_directory('webUI', path)
+
 @app.route('/static/<path:path>')
 def static_get(path):
     # Using request args for path will expose you to directory traversal attacks
@@ -88,8 +98,7 @@ def new_french():
     french = L.LLM('You are a storyteller who speaks in french')
     session['french'] = french
 
-
-
-print(socket.gethostname())
+print(f"Run this on your local machine in WSL or Git Bash:")
+print(f"ssh -L 8001:{socket.gethostname()}:8001 {getpass.getuser()}@dh-mgmt2.hpc.msoe.edu")
 
 app.run(host=socket.gethostname(), port=8001)
