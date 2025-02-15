@@ -6,7 +6,7 @@
 
 const socketHost = "http://localhost:8001"
 const lang = "french"
-const identity = "rozpadekk@msoe.edu"
+const identity = "example.identity@msoe.edu"
 var llm
 var sendDisable = false
 
