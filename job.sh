@@ -1,3 +1,5 @@
+# Use this to start a jupyter notebook
+
 NUM_GPU=4
 export N_CTX=8000
 #export MODEL_PATH="/data/ai_club/llms/mixtral-8x7b-instruct-v0.1.Q6_K.gguf"

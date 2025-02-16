@@ -5,15 +5,15 @@
  */
 
 const socketHost = "http://localhost:8001"
-const lang = "french"
-const identity = "rozpadekk@msoe.edu"
+// const lang = "french"
+const identity = "example.identity@msoe.edu"
 var llm
 var sendDisable = false
 
 $('document').ready(()=>{
     llm = io(socketHost);
     llm.emit("identify", identity)
-    llm.on(lang, (token) => {
+    llm.on("chat-interface", (token) => {
         console.log(token);
         if(token == "<START>"){
             respondToUser("")
@@ -48,7 +48,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
     if ( evt.key === "Enter" && !sendDisable) {
         addMessage('You: ' + highlightRandomWord(message), true);
-        llm.emit(lang, message)
+        llm.emit("chat-interface", message)
         userInput.value = '';
         //respondToUser(message);
     }
