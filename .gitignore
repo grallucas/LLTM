@@ -2,3 +2,4 @@ llm_core/__pycache__/**
 srs/__pycache__/**
 llm_core/.ipynb_checkpoints/**
 srs/.ipynb_checkpoints/**
+backend/__pycache__/**

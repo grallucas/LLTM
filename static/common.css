@@ -1,0 +1,26 @@
+:root {
+    /* color generation: https://colorffy.com/dark-theme-generator?colors=26a269-241f31 */
+    --clr-dark-a0: #000000;
+    --clr-light-a0: #ffffff;
+
+    --clr-primary-a0: #27885b;
+    --clr-primary-a10: #49ad79;
+    --clr-primary-a20: #63b789;
+    --clr-primary-a30: #7bc299;
+    --clr-primary-a40: #92cca9;
+    --clr-primary-a50: #a8d6ba;
+
+    --clr-surface-a0: #241f31;
+    --clr-surface-a10: #393445;
+    --clr-surface-a20: #4f4a5a;
+    --clr-surface-a30: #66616f;
+    --clr-surface-a40: #7d7986;
+    --clr-surface-a50: #96939d;
+
+    --clr-surface-tonal-a0: #282b37;
+    --clr-surface-tonal-a10: #3c3f4a;
+    --clr-surface-tonal-a20: #52545f;
+    --clr-surface-tonal-a30: #696a74;
+    --clr-surface-tonal-a40: #80828a;
+    --clr-surface-tonal-a50: #9899a0;
+}
