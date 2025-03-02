@@ -148,10 +148,14 @@ def get_app(L, SRS, root, port):
         llm = session['chat-inference']
 
         s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
+        res = ""
         emit("chat-interface", '<START>')
         for tok in s:
             emit("chat-interface", tok)
+            res += tok
         emit("chat-interface", '<END>')
+        session['user'].update_daily_known_word_count(len(res.split(" ")))
+        session['user'].update_messages(prompt, res)
         session['user'].save()
 
     # @socketio.on("french")
