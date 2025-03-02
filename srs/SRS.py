@@ -3,13 +3,20 @@ from sortedcontainers import sorteddict
 from datetime import datetime, timezone
 import json
 
+#lambda i : Card(i).due
+#Needed to be defined not labmda to serialize class
+def sorteddict_func(i):
+    return Card(i).due
+    
 class SRS:
+    
+
     """
     Create FSRS object and sorted dictionary
     """
     def __init__(self):
         self.f = FSRS()
-        self.words = sorteddict.SortedDict(lambda i : Card(i).due)
+        self.words = sorteddict.SortedDict(sorteddict_func)
 
     """
     Creates a new card for the input word and adds both to the dictionary of words
@@ -102,6 +109,10 @@ class SRS:
         #json.dump(card_dict, output_file, indent=6)
 
         return card_dict
+
+    def load(self, card_dict):
+        for key, value in card_dict.items():
+            self.words[key] = value
 
     def get_due_before_date(self, date:datetime):
         keys = self.words.keys()

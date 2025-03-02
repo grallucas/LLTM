@@ -9,6 +9,7 @@ from flask import session
 from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
 import getpass
+from user import User
 
 def generate_sys_prompt(srs):
     TEACHER_NAME = 'Rose' # localized to target language (regular 'e' for Finnish)
@@ -133,14 +134,16 @@ def get_app(L, SRS, root, port):
     @socketio.on("identify")
     def identify(identity):
         session['identity'] = identity
-
+        user = User.load(identity)
+        session['user'] = user
     @socketio.on("chat-interface")
     def chat_interface(prompt):
+        """
         if 'srs' not in session:
             session['srs'] = SRS.SRS() # TODO: in the future, load an existing user-specific SRS (or create if it doesn't exist)
-
+        """
         if 'chat-instance' not in session:
-            session['chat-inference'] = L.LLM(generate_sys_prompt(session['srs']))
+            session['chat-inference'] = L.LLM(generate_sys_prompt(session['user'].get_SRS()))
 
         llm = session['chat-inference']
 
@@ -149,6 +152,7 @@ def get_app(L, SRS, root, port):
         for tok in s:
             emit("chat-interface", tok)
         emit("chat-interface", '<END>')
+        session['user'].save()
 
     # @socketio.on("french")
     # def french(prompt):
