@@ -1,4 +1,7 @@
-import llm_core.llm as L
+import importlib
+import sys
+sys.path.append("./llm_core")
+import llm as L
 import os
 """
 Class for the introductory converstaions with Rose
@@ -7,15 +10,15 @@ quizzed in their native language on new target language words
 """
 class learning_llm:
     def __init__(self, language):
-        self.lanuage = language
+        self.language = language
         self.LLM_GLOBAL_INSTANCE = L.Llama(
                 n_ctx=1000,
                 model_path=os.environ['MODEL_PATH'],
                 n_gpu_layers=-1, verbose=0,
                 # embedding=True
             )
-        self.sentence_llm = L.LLM(f"You are a helpful language learning assistant. You respond using words from your dictionary "
-                     "to create simple sentences in {language}. ")
+        self.sentence_llm = L.LLM("You are a helpful language learning assistant. You respond using words from your dictionary "
+                     f"to create simple sentences in {language}. ")
         self.question_llm = L.LLM(f"You are a helpful language learning assistant. You ask users questions about sentences in {language} "
                      "to test if they understand the meaning. Use English to ask questions")
         self.eval_llm = L.LLM("You are a helpful language learning assistant. "
@@ -25,10 +28,11 @@ class learning_llm:
         sentence = self.sentence_llm(
             f"Select {n} words from the following list and write a simple sentence using them in {self.language}. "
             "Then, write a simple question about the sentence to see if the user understands, in English. "
-            f"List of words: {words}",
+            "For example, in the sentence \"Koira juoksee puistossa.\", and intelligent question would be \"What is the subject doing?\" or \"What is the subject?\". "
+            "List of words: {words}",
             response_format={'Sentence':str},
             max_tokens=None,
-            temperature=0,
+            temperature=0.1,
             verbose=False
         )
         return sentence
@@ -53,7 +57,8 @@ class learning_llm:
     
     def evaluate(self, sentence, question, correct_answer, user_answer):
         evaluation = self.eval_llm(
-            f"Is this answer correct? Sentence: {sentence}, question: {question}, correct answer: {correct_answer}, user answer: {user_answer}",
+            "Explain to the user whether their following response to the question is correct. "
+             f"Sentence: {sentence}, question: {question}, correct answer: {correct_answer}, user answer: {user_answer}",
             response_format={'Correct (yes or no)':str, 'Reasoning':str},
             max_tokens=None,
             temperature=0.1,
@@ -67,6 +72,11 @@ def main():
     learn = learning_llm('Finnish')
     sentence = learn.get_sentence(1, finnish_words)
     print(sentence)
+    question = learn.get_question(sentence)
+    print(question)
+    user_answer = input("Enter your answer: ")
+    evaluation = learn.evaluate(sentence, question, question['Answer'], user_answer)
+    print(evaluation)
 
 def get_finnish_words():
     TEACHER_NAME = 'Rose' # localized to target language (regular 'e' for Finnish)
