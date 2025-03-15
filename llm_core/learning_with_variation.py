@@ -3,62 +3,100 @@ import sys
 sys.path.append("./llm_core")
 import llm as L
 import os
+import random
 """
 Class for the introductory converstaions with Rose
 Users aren't expected to know many words, instead being
 quizzed in their native language on new target language words
+
+Asks and evaluates questions based on hard-coded examples
+Vocab is a dictionary with target-language vocab words as keys
+and lists of example sentence-question pairs as the values.
+Ex: vocab = {
+    'koira' : [
+        {'S': 'Tama on minun koirana', 'Q': 'What is Mine?'},
+        {'S': '... koira', 'Q': '...?'},
+        ...
+    ],
+    'talo' : [
+        ...
+    ],
+    ...
+    }
+
+The intended flow of this learning class is as follows:
+     - vocab word is selected from SRS as either review or a new word
+     - random sentence-question pair for the word is grabbed from vocab (dict)
+     - the sentence is given to a monolingual llm to make a variation of
+     - the variation and originally linked question are given to a billingual 
+       llm for a relevant question, similar to the original
+     - The answer is the target vocab word, but the user will answer in their 
+       native language, so the vocab word is translated (how? TODO)
+     - The sentence and question are shown to the user, and the response is 
+       evaluated by another llm
+     - SRS is updated (TODO)
 """
 class learning_llm:
-    def __init__(self, language):
+    def __init__(self, vocab, language='Finnish'):
         self.language = language
-        self.sentence_llm = L.LLM("You are a helpful language learning assistant. You respond using words from your dictionary "
-                     f"to create simple sentences in {language}. ")
-        self.question_llm = L.LLM("You are a helpful language learning assistant. You ask users questions in English "
-                     f"about sentences in {language} to test if they understand the meaning. "
+        self.vocab = vocab
+        self.sentence_llm = L.LLM("You are a helpful assistant. You take a given sentence "
+                     f"with a target word and make a similar variation of it. Keep the target word the same.")
+        self.question_llm = L.LLM("You are a helpful assistant. You will be given a sentence and question pair for "
+                     f"a target vocab word in {language}. A varation of the sentence will be given to you; your goal "
+                     "is to make a similar variation of the question while keeping the answer as the taget vocab word."
                      "For example, in the sentence \"Koira juoksee puistossa.\", and intelligent question would be \"What is the subject doing?\" or \"What is the subject?\". "
                     )
-        self.eval_llm = L.LLM("You are a helpful language learning assistant. "
-                 f"You are given questions and answers to sentences in {language} and determine if they are correct.")
+        self.translate_llm = L.LLM(f"You are a helpful assistant. You translate {language} words into English.")
+        self.eval_llm = L.LLM("You are a helpful assistant. "
+                 f"You are given questions and answers to sentences in {language} and determine if they are correct."
+                 "Speak directly to the user.")
     
-    def get_sentence(self, words):
-        sentence = self.sentence_llm(
-            f"Select a word from {self.language} and write a simple sentence using it. "
-            "The sentence MUST contain a subject, verb, and object. "
-            ,
-            response_format='stream',
-            max_tokens=None,
-            temperature=0.1,
-            verbose=False
-        )
-        return sentence
+    def get_sentence(self, target_word):
+        if target_word in self.vocab:
+            sentences = self.vocab[target_word]
+            s = sentences[random.randint(0, len(sentences) - 1)]['s']
+            s_variation = self.sentence_llm(
+                f"Given the target word '{target_word}' for the sentence {s}, create "
+                "a creative, gramatically correct variation of it that keeps the target word the same. "
+                "Respond with only the sentence.",
+                response_format='stream',
+                max_tokens=None,
+                temperature=0.1,
+                verbose=False
+                )
+            return (s, s_variation)
+        else:
+            print("Error: target word not found for sentence creation.")
     
-    def get_question(self, input_sentence):
-        question = self.question_llm(
-            "Write a simple question in English about a word in the following sentence to see if "
-            f"the user understands: {input_sentence}",
-            response_format='stream',
-            max_tokens=None,
-            temperature=0.1,
-            verbose=False
-        )
-        return question
+    def get_question(self, target_word, s, s_variation):
+        if target_word in self.vocab:
+            questions = self.vocab[target_word]
+            q = questions[random.randint(0, len(questions) - 1)]['q']
+            q_variation = self.question_llm(
+                f"The target word  is '{target_word}'. The sentence-question pair is '{s}', '{q}'. "
+                f"The variation of the sentence is '{s_variation}'. Create an English question related to the "
+                "sentence variation while maintaining the style of the original quesiton pair. "
+                "Respond with only the question.",
+                response_format='stream',
+                max_tokens=None,
+                temperature=0.1,
+                verbose=False
+                )
+            return q_variation
+        else:
+            print("Error: target word not found for question creation.")
     
-    def get_answer(self):
+    def get_answer(self, target_word):
         answer = self.question_llm(
-            "Write the answer in English about the quesiton you made.",
+            f"Translate the following {self.language} word into English. Respond with only the answer."
+            f"Word: {target_word}",
             response_format={'Answer':str},
             max_tokens=None,
             temperature=0.1,
             verbose=False
         )
         return answer
-    
-    def test(self, n, words):
-        sentence = self.get_sentence(3, words, self.language)
-        print(sentence)
-        question = self.get_question2(sentence, self.language)
-        print(question)
-        return (sentence, question)
     
     def evaluate(self, sentence, question, correct_answer, user_answer):
         evaluation = self.eval_llm(
@@ -69,7 +107,6 @@ class learning_llm:
             temperature=0.1,
             verbose=False
         )
-        print(self.eval_llm.get_pretty_hist())
         return evaluation
     
     def grade(self):
@@ -84,15 +121,35 @@ class learning_llm:
 
 
 def main():
-    finnish_words = get_finnish_words()
-    learn = learning_llm('Finnish')
-    sentence = learn.get_sentence(1, finnish_words)
-    print(sentence)
-    question = learn.get_question(sentence)
-    print(question)
-    user_answer = input("Enter your answer: ")
-    #evaluation = learn.evaluate(sentence, question, question['Answer'], user_answer)
-    #print(evaluation)
+    vocab = get_vocab()
+    learn = learning_llm(vocab)
+    s, sentence = learn.get_sentence('koira')
+    s_string = ''
+    for tok in sentence: 
+        s_string = s_string + str(tok)
+    print(s_string)
+    question = learn.get_question('koira', s, s_string)
+    q_string = ''
+    for tok in question: 
+        q_string = q_string + str(tok)
+    print(q_string)
+    answer = learn.get_answer('koira')
+    print(answer)
+    user_answer = input("enter your answer: ")
+    evaluation = learn.evaluate(s_string, q_string, answer, user_answer)
+    e_string = ''
+    for tok in evaluation: 
+        e_string = e_string + str(tok)
+    print(e_string)
+
+def get_vocab(): ### This is kind of like jeopardy. Maybe we can take advantage of that? TODO ###
+    vocab = {'koira': [
+        {'s' : 'Tama on minun koirana.', 'q' : 'What is Mine?'}
+    ], 'talo' : [
+        {'s' : 'Talo on pieni.', 'q' : 'What is small?'}
+    ]
+    }
+    return vocab
 
 def get_finnish_words():
     TEACHER_NAME = 'Rose' # localized to target language (regular 'e' for Finnish)

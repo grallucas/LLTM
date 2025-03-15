@@ -171,7 +171,7 @@ def get_app(learning_llm, L, SRS, root, port):
         # ...
         
         if 'learning' not in session:
-            session['learning-llm'] = learning_llm.learning_llm('Finnish')
+            session['learning-llm'] = learning_llm.learning_llm(learning_llm.get_vocab())
             
         learn = session['learning-llm']
 
@@ -191,24 +191,27 @@ def get_app(learning_llm, L, SRS, root, port):
             emit("chat-interface", '<END>')
             print("Answer correct:", learn.grade()['correct'])
 
+        # target word selection 
+        target_word = 'koira'
         # reset strings
         s_string = ''
         q_string = ''
         # sentence
-        s = learn.get_sentence('')
+        s, sentence = learn.get_sentence(target_word)
         emit("chat-interface", '<START>')
-        for tok in s:
+        for tok in sentence:
             emit("chat-interface", tok)
             s_string += tok
+        emit("chat-interface", "\n\n")
         print('s_string:', s_string)
         # question
-        q = learn.get_question(s_string)
+        q = learn.get_question(target_word, s, s_string)
         for tok in q:
             emit("chat-interface", tok)
             q_string += tok
         emit("chat-interface", '<END>')
         print('q_string:', q_string)
-        a = learn.get_answer()['Answer']
+        a = learn.get_answer(target_word)['Answer']
         print('answer:', a)
         # save session variables
         session['s'] = s_string

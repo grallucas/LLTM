@@ -7,7 +7,7 @@ import server
 
 sys.path.append("./llm_core")
 import llm
-import learning_llm
+import learning_with_variation
 
 sys.path.append("./srs")
 import SRS
@@ -16,7 +16,7 @@ llm.LLM('') # cold start
 print('started')
 
 while True:
-    app_fn = server.get_app(learning_llm, llm, SRS, Path.cwd().as_posix(), 8001)
+    app_fn = server.get_app(learning_with_variation, llm, SRS, Path.cwd().as_posix(), 8001)
     app_fn()
 
     opt = input('Use letters to restart [(b)ackend (l)lm (s)rs] or nothing to quit: ')
@@ -26,8 +26,8 @@ while True:
     if 'b' in opt:
         Path('backend/server.py').touch()
         importlib.reload(server)
-        Path('llm_core/learning_llm.py').touch()
-        importlib.reload(learning_llm)
+        Path('llm_core/learning_with_variation.py').touch()
+        importlib.reload(learning_with_variation)
     if 's' in opt:
         Path('srs/SRS.py').touch()
         importlib.reload(SRS)
