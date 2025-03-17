@@ -4,51 +4,61 @@
  low priority - magnify window design (like textbook)
  */
 
-const socketHost = "http://localhost:8001"
-// const lang = "french"
-const identity = "example.identity@msoe.edu"
-var llm
-var sendDisable = false
+const socketHost = "http://localhost:8001";
+
+const identity = "example.identity@msoe.edu";
+var sockets;
+var sendDisable = false;
+
+function format_msg(text) {
+    let words = text.split(' ');
+
+    const randomIndex = Math.floor(Math.random() * words.length);
+
+    words.forEach((w,i) => {
+        words[i] = `<span onclick=toggleClickableWindow('${w}') class="word ${i == randomIndex ? "feedback-underline" : ""}">${w}</span>`
+    });
+    
+    return words.join(' ');
+}
 
 $('document').ready(()=>{
-    llm = io(socketHost);
-    llm.emit("identify", identity)
-    llm.on("chat-interface", (token) => {
-        console.log(token);
+    sockets = io(socketHost);
+    sockets.emit("identify", identity)
+    sockets.on("chat-interface", (token) => {
         if(token == "<START>"){
             respondToUser("")
             sendDisable = true
         }else if(token == "<END>"){
+            last_msg = $(".bot-message").last()[0]
+            last_msg.innerHTML = format_msg(last_msg.innerHTML) + '<span class="spinner"></span>'
+        }else if(token == "<TTS>"){
+            const audio = new Audio(`/tts/${identity}/latest/${new Date().getTime()}`);
+            audio.play().then(() => {
+                // console.log('Audio is playing');
+            }).catch(error => {
+                console.error('Error playing audio:', error);
+            });
+
             sendDisable = false
+            $(".bot-message > .spinner").last()[0].remove()
         }else{
-            botMessages = $(".bot-message")
-            botMessages[botMessages.length-1].innerText += token
+            $(".bot-message").last()[0].innerText += token
         }
     });
-    llm.on('disconnect', ()=>{
+    sockets.on('disconnect', ()=>{
         confirm("Server disconnected")
         window.location.reload()
     })
 });
 
-
-
-
 document.getElementById('user-input').addEventListener('keypress', function(evt) {
     const userInput = document.getElementById('user-input');
     const message = userInput.value;
 
-    function highlightRandomWord(text) {
-        const words = text.split(' ');
-        const randomIndex = Math.floor(Math.random() * words.length);
-        words[randomIndex] = `<a href="#" style="background-color: red; color: white; text-decoration: none;" 
-  onclick="toggleClickableWindow('${words[randomIndex]}')">${words[randomIndex]}</a>`;
-        return words.join(' ');
-    }
-
     if ( evt.key === "Enter" && !sendDisable) {
-        addMessage('You: ' + highlightRandomWord(message), true);
-        llm.emit("chat-interface", message)
+        addMessage(format_msg(message), true);
+        sockets.emit("chat-interface", message)
         userInput.value = '';
         //respondToUser(message);
     }
@@ -57,6 +67,7 @@ function addMessage(message, isUser = false) {
     const messagesDiv = document.getElementById('messages');
     const messageElement = document.createElement('div');
     messageElement.innerHTML = message;
+    messageElement.classList.add('message');
     if (isUser) {
         messageElement.classList.add('user-message');
     } else {
@@ -66,6 +77,11 @@ function addMessage(message, isUser = false) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 function toggleClickableWindow(word) {
+    // const audio = new Audio(`/tts/word/${word}`);
+    // audio.play().then().catch(e => {
+    //     console.error('Error playing audio:', e)
+    // });
+
     const clickableWindow = document.getElementById('clickable-window');
     const wordParts = word.split('').join(' ');
     const pronunciation = word.split('').join('-');
@@ -75,6 +91,11 @@ function toggleClickableWindow(word) {
             <button id="close-clickable-window">Close</button>
            </div>
             <h2>${word}</h2>
+            <hr class="thick-line">
+            <audio controls>
+                <source src="/tts/word/${word}" type="audio/wav">
+                Your browser does not support the audio tag.
+            </audio>
             <hr class="thick-line">
             <p>Could be a Comment From Rose such as "Need More Help?, Try This"</p>
             <hr class="thick-line">
@@ -100,7 +121,7 @@ document.getElementById('close-clickable-window').addEventListener('click', func
     closeClickableWindow();
 });
 function respondToUser(message) {    
-    addMessage('ȒȰṦḜ: ' + message);
+    addMessage(message);
 }
 function toggleStatsWindow() {
     const overlay = document.getElementById('overlay');

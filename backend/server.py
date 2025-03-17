@@ -4,7 +4,7 @@ import subprocess
 import socket
 import time
 import json
-from flask import send_from_directory
+from flask import send_from_directory, Response
 from flask import session
 from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
@@ -76,10 +76,13 @@ def generate_sys_prompt(srs):
 
     return sys_prompt
 
-def get_app(learning_llm, L, SRS, root, port):
+tts_words = {}
+
+def get_app(learning_llm, L, SRS, tts, root, port):
     app = Flask(__name__, static_folder=None)
     socketio = SocketIO(app,debug=True,cors_allowed_origins='*',async_mode='threading')
-    
+    tts_msgs = {}
+
     def logits_processor(prev_tok_ids, next_tok_logits):
         return next_tok_logits
 
@@ -126,6 +129,25 @@ def get_app(learning_llm, L, SRS, root, port):
         print(f'{root}/static', subpath)
         return send_from_directory(f'{root}/static', subpath)
 
+    @app.route('/tts/<identity>/latest/<random>')
+    def get_tts_msg(identity, random):
+        nonlocal tts_msgs
+        if identity in tts_msgs:
+            tts_msgs[identity].seek(0)
+            return Response(tts_msgs[identity], mimetype='audio/wav')
+        else:
+            return 'No audio generated yet'
+
+    @app.route('/tts/word/<word>')
+    def get_tts_word(word):
+        global tts_words
+        word = word.lower().strip()
+        if word not in tts_words:
+            tts_words[word] = tts.generate_audio(word)
+        
+        tts_words[word].seek(0)
+        return Response(tts_words[word], mimetype='audio/wav')
+
     @socketio.on('connect')
     def handle_connect():
         print('Client connected')
@@ -137,106 +159,94 @@ def get_app(learning_llm, L, SRS, root, port):
     # http://localhost:8001/static/chat/index.html
     @socketio.on("chat-interface")
     def chat_interface(prompt):
+        nonlocal tts_msgs
+
         if 'srs' not in session:
             session['srs'] = SRS.SRS() # TODO: in the future, load an existing user-specific SRS (or create if it doesn't exist)
-        '''
-        if 'chat-instance' not in session:
-            session['chat-inference'] = L.LLM(generate_sys_prompt(session['srs']))
 
-        llm = session['chat-inference']
+        level0_mode = False
 
-        
-        s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
-        emit("chat-interface", '<START>')
-        for tok in s:
-            emit("chat-interface", tok)
-        emit("chat-interface", '<END>')
-        '''
-        # The process:
-        # TODO: intro prompt
-        # User chooses a subject
-        # LLM makes a simple sentence in target language
-        # LLM asks a question in native language
-        # User responds in native language
-        # LLM gives reasoning on response in native language
-        # LLM makes another simple sentence
-        # LLM asks a question
-        # ...
+        if not level0_mode:
+            if 'chat-instance' not in session:
+                session['chat-inference'] = L.LLM(generate_sys_prompt(session['srs']))
 
-        # The code:
-        # check if question already asked (sentence and question variables exist)
-        # if so, provide reasoning
-        # make new sentence (and store variable)
-        # ask new question  (and store variable)
-        # ...
-        
-        if 'learning' not in session:
-            session['learning-llm'] = learning_llm.learning_llm(learning_llm.get_vocab())
+            llm = session['chat-inference']
             
-        learn = session['learning-llm']
-
-        if 's' not in session:
-            session['s'] = ''
-            session['q'] = ''
-            session['a'] = ''
-        else:
-            # evaluate
-            s_string = session['s']
-            q_string = session['q']
-            a = session['a']
-            e = learn.evaluate(s_string, q_string, a, prompt)
+            s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
+            msg = ''
             emit("chat-interface", '<START>')
-            for tok in e:
+            for tok in s:
                 emit("chat-interface", tok)
+                msg += tok
             emit("chat-interface", '<END>')
-            print("Answer correct:", learn.grade()['correct'])
+            tts_msgs[session['identity']] = tts.generate_audio(msg) # TODO try catch for invalid msg
+            emit("chat-interface", '<TTS>')
+        else:
+            # The process:
+            # TODO: intro prompt
+            # User chooses a subject
+            # LLM makes a simple sentence in target language
+            # LLM asks a question in native language
+            # User responds in native language
+            # LLM gives reasoning on response in native language
+            # LLM makes another simple sentence
+            # LLM asks a question
+            # ...
 
-        # target word selection 
-        target_word = 'koira'
-        # reset strings
-        s_string = ''
-        q_string = ''
-        # sentence
-        s, sentence = learn.get_sentence(target_word)
-        emit("chat-interface", '<START>')
-        for tok in sentence:
-            emit("chat-interface", tok)
-            s_string += tok
-        emit("chat-interface", "\n\n")
-        print('s_string:', s_string)
-        # question
-        q = learn.get_question(target_word, s, s_string)
-        for tok in q:
-            emit("chat-interface", tok)
-            q_string += tok
-        emit("chat-interface", '<END>')
-        print('q_string:', q_string)
-        a = learn.get_answer(target_word)['Answer']
-        print('answer:', a)
-        # save session variables
-        session['s'] = s_string
-        session['q'] = q_string
-        session['a'] = a
+            # The code:
+            # check if question already asked (sentence and question variables exist)
+            # if so, provide reasoning
+            # make new sentence (and store variable)
+            # ask new question  (and store variable)
+            # ...
+            
+            if 'learning' not in session:
+                session['learning-llm'] = learning_llm.learning_llm(learning_llm.get_vocab())
+                
+            learn = session['learning-llm']
 
-    # @socketio.on("french")
-    # def french(prompt):
-    #     if 'french' not in session:
-    #         session['french'] = L.LLM('You are a storyteller who speaks in french')
+            if 's' not in session:
+                session['s'] = ''
+                session['q'] = ''
+                session['a'] = ''
+            else:
+                # evaluate
+                s_string = session['s']
+                q_string = session['q']
+                a = session['a']
+                e = learn.evaluate(s_string, q_string, a, prompt)
+                emit("chat-interface", '<START>')
+                for tok in e:
+                    emit("chat-interface", tok)
+                emit("chat-interface", '<END>')
+                print("Answer correct:", learn.grade()['correct'])
 
-    #     french = session['french']
-        
-    #     print(f"{session['identity']} sent : {prompt}")
-    #     resp = french(prompt, response_format='stream', max_tokens=200, logits_processor=[logits_processor])
-    #     emit("french", "<START>") 
-    #     for token in resp:
-    #         emit("french", token)
-    #     emit("french", "<END>") 
-
-
-    # @socketio.on("new-french")
-    # def new_french():
-    #     french = L.LLM('You are a storyteller who speaks in french')
-    #     session['french'] = french
+            # target word selection 
+            target_word = 'koira'
+            # reset strings
+            s_string = ''
+            q_string = ''
+            # sentence
+            s, sentence = learn.get_sentence(target_word)
+            emit("chat-interface", '<START>')
+            for tok in sentence:
+                emit("chat-interface", tok)
+                s_string += tok
+            emit("chat-interface", "\n\n")
+            print('s_string:', s_string)
+            # question
+            q = learn.get_question(target_word, s, s_string)
+            for tok in q:
+                emit("chat-interface", tok)
+                q_string += tok
+            emit("chat-interface", '<END>')
+            print('q_string:', q_string)
+            a = learn.get_answer(target_word)['Answer']
+            print('answer:', a)
+            # save session variables
+            session['s'] = s_string
+            session['q'] = q_string
+            session['a'] = a
 
     def app_fn():
         nonlocal app, port
