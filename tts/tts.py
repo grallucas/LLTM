@@ -1,35 +1,45 @@
 from transformers import VitsModel, AutoTokenizer
 import torch
-from io import BytesIO
 import numpy as np
-import wave
-
-# NOTE: WHY IS FLASK CLOSING THIS>!?!?!?!?
-class AutoBytesIO(BytesIO):
-    def close(self):
-        pass
 
 model = VitsModel.from_pretrained("facebook/mms-tts-fin")
 tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-fin")
+
+model.to('cuda:0')
+
+def create_wav_header(num_channels, sample_rate, num_samples, bits_per_sample):
+    byte_rate = sample_rate * num_channels * bits_per_sample // 8
+    block_align = num_channels * bits_per_sample // 8
+    subchunk2_size = num_samples * num_channels * bits_per_sample // 8
+    chunk_size = 36 + subchunk2_size
+
+    header = b'RIFF'
+    header += (chunk_size).to_bytes(4, byteorder='little')
+    header += b'WAVE'
+    header += b'fmt '
+    header += (16).to_bytes(4, byteorder='little')  # Subchunk1Size (16 for PCM)
+    header += (1).to_bytes(2, byteorder='little')  # AudioFormat (1 for PCM)
+    header += (num_channels).to_bytes(2, byteorder='little')
+    header += (sample_rate).to_bytes(4, byteorder='little')
+    header += (byte_rate).to_bytes(4, byteorder='little')
+    header += (block_align).to_bytes(2, byteorder='little')
+    header += (bits_per_sample).to_bytes(2, byteorder='little')
+    header += b'data'
+    header += (subchunk2_size).to_bytes(4, byteorder='little')
+    
+    return header
 
 def generate_audio(text):
     text = text.replace('c', 'k').replace('w', 'v') # FOR FINNISH. TODO: generalize to any lang
 
     inputs = tokenizer(text, return_tensors="pt")
-
-    # print('AUDIO GENERATING')
+    inputs = {k:v.to('cuda:0') for k,v in inputs.items()}
 
     with torch.no_grad():
-        output = model(**inputs).waveform[0].numpy()
+        output = (model(**inputs).waveform[0]*32767.0).to('cpu').numpy().astype(np.int16)
 
-    # print('AUDIO GENERATED')
+    # FREE gpu memory
+    for k in list(inputs.keys()): del inputs[k]
+    torch.cuda.empty_cache()
 
-    output = (output*32767.0).astype(np.int16)
-
-    buff = AutoBytesIO()
-    wav = wave.open(buff, 'w')
-    wav.setparams((1, 2, model.config.sampling_rate, output.shape[-1], 'NONE', 'not compressed'))
-    wav.writeframes(output.tobytes())
-    # buff.seek(0)
-
-    return buff
+    return create_wav_header(1, model.config.sampling_rate, output.shape[-1], 16) + output.tobytes()

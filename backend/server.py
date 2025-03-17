@@ -77,8 +77,12 @@ def generate_sys_prompt(srs):
     return sys_prompt
 
 tts_words = {}
+img_words = {}
 
-def get_app(learning_llm, L, SRS, tts, root, port):
+def clean_word(s):
+    return ''.join(c for c in s.lower().strip() if c.isalpha())
+    
+def get_app(learning_llm, L, SRS, tts, image_gen, root, port):
     app = Flask(__name__, static_folder=None)
     socketio = SocketIO(app,debug=True,cors_allowed_origins='*',async_mode='threading')
     tts_msgs = {}
@@ -132,21 +136,42 @@ def get_app(learning_llm, L, SRS, tts, root, port):
     @app.route('/tts/<identity>/latest/<random>')
     def get_tts_msg(identity, random):
         nonlocal tts_msgs
+
         if identity in tts_msgs:
-            tts_msgs[identity].seek(0)
             return Response(tts_msgs[identity], mimetype='audio/wav')
         else:
             return 'No audio generated yet'
 
     @app.route('/tts/word/<word>')
-    def get_tts_word(word):
+    def test_img(word):
         global tts_words
-        word = word.lower().strip()
+
+        word = clean_word(word)
         if word not in tts_words:
             tts_words[word] = tts.generate_audio(word)
         
-        tts_words[word].seek(0)
         return Response(tts_words[word], mimetype='audio/wav')
+
+    from io import BytesIO
+
+    @app.route('/img/word/<word>')
+    def get_tts_word(word):
+        global img_words
+
+        word = clean_word(word)
+        
+        if word not in img_words:
+            l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
+            l(f'Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
+            prompt = l(f'Give me a concise description for a picture depicting the Finnish word. DO NOT include text/writing of any sort. Avoid including people if possible. The word is: "{word}"')
+            print(word, '->', l.get_pretty_hist())
+            img_words[word] = image_gen.generate_img(prompt)
+
+        img = img_words[word]
+        img_io = BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+        return Response(img_io, mimetype='image/png')
 
     @socketio.on('connect')
     def handle_connect():

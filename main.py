@@ -15,11 +15,14 @@ import SRS
 sys.path.append("./tts")
 import tts
 
+sys.path.append("./img_core")
+import image_gen
+
 llm.LLM('') # cold start
 print('started')
 
 while True:
-    app_fn = server.get_app(learning_with_variation, llm, SRS, tts, Path.cwd().as_posix(), 8001)
+    app_fn = server.get_app(learning_with_variation, llm, SRS, tts, image_gen, Path.cwd().as_posix(), 8001)
     app_fn()
 
     opt = input('Use letters to restart [(b)ackend (l)lm (s)rs] or nothing to quit: ')
@@ -34,6 +37,9 @@ while True:
 
         Path('./tts/tts.py').touch()
         importlib.reload(tts)
+
+        Path('./img_core/image_gen.py').touch()
+        importlib.reload(image_gen)
     if 's' in opt:
         Path('srs/SRS.py').touch()
         importlib.reload(SRS)

@@ -85,18 +85,40 @@ function toggleClickableWindow(word) {
     const clickableWindow = document.getElementById('clickable-window');
     const wordParts = word.split('').join(' ');
     const pronunciation = word.split('').join('-');
-    if (clickableWindow.style.display === 'none' || clickableWindow.innerHTML.includes(word)) {
+    if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
         clickableWindow.innerHTML = `
            <div id="close-button-container">
             <button id="close-clickable-window">Close</button>
            </div>
             <h2>${word}</h2>
+
             <hr class="thick-line">
+
             <audio controls>
                 <source src="/tts/word/${word}" type="audio/wav">
                 Your browser does not support the audio tag.
             </audio>
+
             <hr class="thick-line">
+
+            <details>
+                <summary style="cursor: pointer"><b>See translation and image. This will make you see the word more often.</b></summary>
+
+                <hr class="thick-line">
+
+                <p><b>Translation:</b> blah blah</p>
+
+                <hr class="thick-line">
+
+                <div style="position:relative; border: 1px solid white; aspect-ratio: 1/1; margin-bottom: 15px;">
+                    <div class="spinner" style="position:absolute; top:22%; left:22%; width:50%; height:50%; border-width: 30px;"></div>
+                    <img id="word-img" src="/img/word/${word}" style="width:100%; position:absolute;">
+                </div>
+                <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea>                
+            </details>
+
+            <hr class="thick-line">
+
             <p>Could be a Comment From Rose such as "Need More Help?, Try This"</p>
             <hr class="thick-line">
             <p><strong>Word broken down into parts:</strong>${wordParts}</p>

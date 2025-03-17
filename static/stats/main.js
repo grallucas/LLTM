@@ -25,7 +25,7 @@ const requestStats = async (language)=>{
 
 const updateStats = (language)=>{
     requestStats(language).then((stats)=>{
-        console.log(stats)
+        // console.log(stats)
         graphs = stats.graphs
         if(chartId){
             chartId.destroy()
