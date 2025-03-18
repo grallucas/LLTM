@@ -4,6 +4,9 @@ import getpass
 from dataclasses import dataclass
 from llama_cpp import Llama, LogitsProcessorList, LlamaGrammar
 import llm_core.response_format as response_fmt
+import threading
+
+llm_lock = threading.Lock()
 
 try: LLM_GLOBAL_INSTANCE
 except NameError: LLM_GLOBAL_INSTANCE = None
@@ -146,7 +149,6 @@ class LLM:
         if 'qwen' in MODEL_PATH: return self._hist_to_prompt_qwen(inject_resp)
         raise Exception('Model type not supported')
 
-
     def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False, **kwargs):
         '''
         response_format: None | dict | list | type(float) | type(int) | type(str) | 'stream'
@@ -164,7 +166,7 @@ class LLM:
                 response_format = {'country': str, 'capital': str, 'pop': int, 'nearest_cities': [{'name': str, 'pop': int}, 3]}
             This example generates one capital along with a list of 3 cities, populations included for all cities.
             The following would work for an arbitrarily-large list of nearest cities:
-                {'country': str, 'capital': str, 'pop': int, 'nearest_cities': [{'name': str, 'pop': int}, ...]}
+                {'country': str, 'capital': str, 'pop': int, 'nearest_cities': [{'name': sinastr, 'pop': int}, ...]}
             
             Note: in the case of formatted responses, max tokens is the highest number of output tokens PER JSON VALUE.
 
@@ -172,61 +174,64 @@ class LLM:
                 temperature = 0
                 max_tokens = <some sufficiently LARGE number, e.g., 1000>
         '''
-        response_format_is_special = type(response_format) in [list, dict] or response_format in [float, int, str]
-        if response_format_is_special and (not type(response_format) is dict):
-            assert 0 # It's possible to have a non-dict response_format with grammars, but this remains unimplemented 
+        with llm_lock:
+            response_format_is_special = type(response_format) in [list, dict] or response_format in [float, int, str]
+            if response_format_is_special and (not type(response_format) is dict):
+                assert 0 # It's possible to have a non-dict response_format with grammars, but this remains unimplemented 
 
-        self._hist.append(Msg('user', msg, (response_format if response_format_is_special else None)))
-        prompt = self._hist_to_prompt()
-        _inc_tok_count('in', len(prompt))
+            self._hist.append(Msg('user', msg, (response_format if response_format_is_special else None)))
+            prompt = self._hist_to_prompt()
+            _inc_tok_count('in', len(prompt))
 
-        if response_format is None:
-            raw = LLM_GLOBAL_INSTANCE(
-                prompt,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                **kwargs
-            )
-            
-            resp = raw['choices'][0]['text']
-            _inc_tok_count('out', raw['usage']['completion_tokens'])
-            self._hist.append(Msg('assistant', resp))
+            if response_format is None:
+                print('GENERATE', msg)
+                raw = LLM_GLOBAL_INSTANCE(
+                    prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    **kwargs
+                )
+                print('-- generated --')
 
-            return resp
-        elif response_format_is_special:
-            # TODO: reimplement formatted generation to work with tokens instead of text.
-            # ... b/c currently, any special token strings in the message content will be parsed  
-
-            prompt = LLM_GLOBAL_INSTANCE.detokenize(prompt, special=True).decode()
-            resp = response_fmt.gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose)
-            
-            try:
+                resp = raw['choices'][0]['text']
+                _inc_tok_count('out', raw['usage']['completion_tokens'])
                 self._hist.append(Msg('assistant', resp))
-                return json.loads(resp)
-            except json.JSONDecodeError as e:
-                raise Exception(f'Cannot parse this JSON: {resp}')
-        elif response_format == 'stream':
-            raw = LLM_GLOBAL_INSTANCE(
-                prompt,
-                stream=True,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                **kwargs
-            )
 
-            self._hist.append(Msg('assistant', ''))
-            msg = self._hist[-1]
-            
-            def tok_stream():
-                for tok in raw:
-                    tok = tok['choices'][0]['text']
-                    _inc_tok_count('out', 1)
-                    msg.content += tok
-                    yield tok
+                return resp
+            elif response_format_is_special:
+                # TODO: reimplement formatted generation to work with tokens instead of text.
+                # ... b/c currently, any special token strings in the message content will be parsed  
 
-            return tok_stream()
-        else:
-            raise Exception(f'Unsupported Response Format: {response_format}')
+                prompt = LLM_GLOBAL_INSTANCE.detokenize(prompt, special=True).decode()
+                resp = response_fmt.gen_response_formated(LLM_GLOBAL_INSTANCE, response_format, prompt, temperature, max_tokens, verbose)
+                
+                try:
+                    self._hist.append(Msg('assistant', resp))
+                    return json.loads(resp)
+                except json.JSONDecodeError as e:
+                    raise Exception(f'Cannot parse this JSON: {resp}')
+            elif response_format == 'stream':
+                raw = LLM_GLOBAL_INSTANCE(
+                    prompt,
+                    stream=True,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    **kwargs
+                )
+
+                self._hist.append(Msg('assistant', ''))
+                msg = self._hist[-1]
+                
+                def tok_stream():
+                    for tok in raw:
+                        tok = tok['choices'][0]['text']
+                        _inc_tok_count('out', 1)
+                        msg.content += tok
+                        yield tok
+
+                return tok_stream()
+            else:
+                raise Exception(f'Unsupported Response Format: {response_format}')
 
     def tokenize(s:str, add_bos=False):
         global LLM_GLOBAL_INSTANCE

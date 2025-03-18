@@ -10,6 +10,7 @@ from stats import PieChart, StatView, LineGraph, NumericalStat
 import numpy as np
 import getpass
 from io import BytesIO
+import dictionary
 
 
 def generate_sys_prompt(srs):
@@ -78,8 +79,13 @@ def generate_sys_prompt(srs):
 
     return sys_prompt
 
+# stuff to cache on disk
 tts_words = {}
 img_words = {}
+dictionary_words = {}
+
+# to cache in mem (just regenerate conversation audio if needed)
+tts_msgs = {}
 
 def clean_word(s):
     return ''.join(c for c in s.lower().strip() if c.isalpha())
@@ -94,7 +100,6 @@ import image_gen
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app,debug=True,cors_allowed_origins='*',async_mode='threading')
-tts_msgs = {}
 
 ROOT = None
 
@@ -153,7 +158,7 @@ def get_tts_msg(identity, random):
         return 'No audio generated yet'
 
 @app.route('/tts/word/<word>')
-def test_img(word):
+def get_tts_word(word):
     global tts_words
 
     word = clean_word(word)
@@ -162,15 +167,23 @@ def test_img(word):
     
     return Response(tts_words[word], mimetype='audio/wav')
 
+@app.route('/dictionary/<word>')
+def get_word_info(word):
+    if word not in dictionary_words:
+        # TODO: clean data via LLM, add missing ipa via llm
+        dictionary_words[word] = dictionary.get_word_info(word)
+
+    return dictionary_words[word]
+
 @app.route('/img/word/<word>')
-def get_tts_word(word):
+def get_img_word(word):
     global img_words
 
     word = clean_word(word)
-    
+
     if word not in img_words:
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
-        l(f'Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
+        l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
         prompt = l(f'Give me a concise description for a picture depicting the Finnish word. DO NOT include text/writing of any sort. Avoid including people if possible. The word is: "{word}"')
         print(word, '->', l.get_pretty_hist())
         img_words[word] = image_gen.generate_img(prompt)
