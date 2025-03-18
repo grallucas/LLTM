@@ -1,8 +1,8 @@
 import importlib
 import sys
-sys.path.append("./llm_core")
 import llm as L
 import os
+
 """
 Class for the introductory converstaions with Rose
 Users aren't expected to know many words, instead being
