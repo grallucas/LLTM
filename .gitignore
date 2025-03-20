@@ -6,3 +6,4 @@ srs/__pycache__/**
 llm_core/.ipynb_checkpoints/**
 srs/.ipynb_checkpoints/**
 backend/__pycache__/**
+.env

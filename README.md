@@ -1,5 +1,6 @@
-LLTM
+NAME TBD
 ===
+*some language-learning project*
 
 This repo has all code for the MAIC LLTM (large language-teaching model) research project.
 

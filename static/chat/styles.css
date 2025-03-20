@@ -9,6 +9,14 @@ body, html {
     color: white;
 }
 
+a {
+    color: aqua;
+}
+
+a:visited {
+    color:magenta;
+}
+
 #messages {
     display: flex;
     flex-direction: column;

@@ -77,7 +77,9 @@ class LLM:
                 model_path=MODEL_PATH,
 
                 n_gpu_layers=-1, verbose=verbose,
-                # embedding=True
+                # embedding=True,
+
+                flash_attn=True
             )
         self._hist = []
         self.reset(system_prompt)
@@ -144,9 +146,41 @@ class LLM:
 
         return prompt
 
+    def _hist_to_prompt_llama(self, inject_resp):
+        prompt = [LLM_GLOBAL_INSTANCE.token_bos()]
+
+        newlines = LLM_GLOBAL_INSTANCE.tokenize(b'\n\n', special=True, add_bos=False)[0]
+        start_header = LLM_GLOBAL_INSTANCE.tokenize(b'<|start_header_id|>', special=True, add_bos=False)[0]
+        end_header = LLM_GLOBAL_INSTANCE.tokenize(b'<|end_header_id|>', special=True, add_bos=False)[0]
+        eos = LLM_GLOBAL_INSTANCE.token_eos()
+
+        role = {
+            name: LLM_GLOBAL_INSTANCE.tokenize(name.encode(), special=True, add_bos=False)[0]
+            for name in ['system', 'user', 'assistant']
+        }
+
+        for msg in self._hist:
+            msg_content = msg.content
+            is_last = msg == self._hist[-1]
+            has_fmt = not not msg.response_format
+            if has_fmt and is_last:
+                msg_content += f'\n\n\n{response_fmt.pretty_response_format(msg.response_format)}'
+            if has_fmt and not is_last:
+                msg_content += '\n\n\nRespond in JSON.'
+
+            tokenized_message = LLM_GLOBAL_INSTANCE.tokenize(msg_content.encode(), special=False, add_bos=False)
+
+            prompt += [start_header, role[msg.role], end_header, newlines, *tokenized_message, eos]
+
+            if is_last and msg.role == 'user':
+                prompt += [start_header, role['assistant'], end_header, newlines]
+        
+        return prompt
+
     def _hist_to_prompt(self, inject_resp=None):
         if 'mixtral' in MODEL_PATH: return self._hist_to_prompt_mixtral(inject_resp)
         if 'qwen' in MODEL_PATH: return self._hist_to_prompt_qwen(inject_resp)
+        if 'Llama' in MODEL_PATH: return self._hist_to_prompt_llama(inject_resp)
         raise Exception('Model type not supported')
 
     def __call__(self, msg:str, response_format:str|dict=None, temperature=0, max_tokens=100, verbose=False, **kwargs):

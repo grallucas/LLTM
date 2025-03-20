@@ -11,7 +11,7 @@ import numpy as np
 import getpass
 from io import BytesIO
 import dictionary
-
+from collections import OrderedDict
 
 def generate_sys_prompt(srs):
     TEACHER_NAME = 'Rose' # localized to target language (regular 'e' for Finnish)
@@ -169,9 +169,32 @@ def get_tts_word(word):
 
 @app.route('/dictionary/<word>')
 def get_word_info(word):
+    word = clean_word(word)
     if word not in dictionary_words:
         # TODO: clean data via LLM, add missing ipa via llm
-        dictionary_words[word] = dictionary.get_word_info(word)
+        language = 'Finnish'
+        result = dictionary.get_word_info(word, language, True)
+        if not result['ipa']:
+            l = L.LLM(f'You write {language} IPA spellings of words. Use phonemic (broad) transcription in slashes.')
+            ipa_spelling = l(f'Give me the phonemic transcription of: {word}', response_format={'ipa': str})['ipa']
+            if '/' not in ipa_spelling:
+                ipa_spelling = f'/{ipa_spelling}/'
+            result['ipa'] = ipa_spelling + ' (AI ✨ generated. So, not good)'
+        
+        definitions_list = OrderedDict()
+        def flatten(defs, l):
+            for def_desc, ex_or_sub in defs.items():
+                if type(ex_or_sub) is list:
+                    l[def_desc] = ex_or_sub
+                else:
+                    flatten(ex_or_sub, l)
+        for k,v in result['definitions'].items():
+            l = OrderedDict()
+            flatten(v, l)
+            definitions_list[k] = l
+        result['definitions'] = definitions_list
+
+        dictionary_words[word] = result
 
     return dictionary_words[word]
 
@@ -184,7 +207,7 @@ def get_img_word(word):
     if word not in img_words:
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
         l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
-        prompt = l(f'Give me a concise description for a picture depicting the Finnish word. DO NOT include text/writing of any sort. Avoid including people if possible. The word is: "{word}"')
+        prompt = l(f'Give me a concise description for a precise picture depicting the Finnish word. Absolutely DO NOT include text/writing/symbols of any sort. Avoid including people if possible. The word is: "{word}"')
         print(word, '->', l.get_pretty_hist())
         img_words[word] = image_gen.generate_img(prompt)
 

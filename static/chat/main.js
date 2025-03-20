@@ -76,16 +76,36 @@ function addMessage(message, isUser = false) {
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-function toggleClickableWindow(word) {
+async function toggleClickableWindow(word) {
     // const audio = new Audio(`/tts/word/${word}`);
     // audio.play().then().catch(e => {
     //     console.error('Error playing audio:', e)
     // });
 
     const clickableWindow = document.getElementById('clickable-window');
-    const wordParts = word.split('').join(' ');
-    const pronunciation = word.split('').join('-');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
+        let pronunciation_html = 'Could not load ipa spelling.';
+        let translation_html = 'Could not load translation.';
+        let wiktionary_url = 'Could not load URL.'
+
+        async function updateData(word){
+            await fetch(`/dictionary/${word}`).then(r => r.json()).then(data => {
+                pronunciation_html = data['ipa'];
+                wiktionary_url = data['url'];
+
+                translation_html = '';
+
+                for (let k in data['definitions']) {
+                    translation_html += `<h3>${k}</h3>`;
+                    for (let k2 in data['definitions'][k]) {
+                        translation_html += `<p>${k2}</b>`;
+                        data['definitions'][k][k2].forEach(ex => {translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`});
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+        await updateData(word);
+
         clickableWindow.innerHTML = `
            <div id="close-button-container">
             <button id="close-clickable-window">Close</button>
@@ -93,6 +113,12 @@ function toggleClickableWindow(word) {
             <h2>${word}</h2>
 
             <hr class="thick-line">
+
+            <p><b>Pronunciation</b></p>
+
+            <p>${pronunciation_html}</p>
+
+            <!-- TODO: IPA character descriptions here -->
 
             <audio controls>
                 <source src="/tts/word/${word}" type="audio/wav">
@@ -102,11 +128,11 @@ function toggleClickableWindow(word) {
             <hr class="thick-line">
 
             <details>
-                <summary style="cursor: pointer"><b>See translation and image. This will make you see the word more often.</b></summary>
+                <summary style="cursor: pointer"><b>See Translation & Image.</b> Do this to see the word more often in the future.</summary>
 
                 <hr class="thick-line">
 
-                <p><b>Translation:</b> blah blah</p>
+                <p><b>Translation:</b> ${translation_html}</p>
 
                 <hr class="thick-line">
 
@@ -114,18 +140,12 @@ function toggleClickableWindow(word) {
                     <div class="spinner" style="position:absolute; top:22%; left:22%; width:50%; height:50%; border-width: 30px;"></div>
                     <img id="word-img" src="/img/word/${word}" style="width:100%; position:absolute;">
                 </div>
-                <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea>                
+                <!-- <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea> -->
             </details>
 
             <hr class="thick-line">
 
-            <p>Could be a Comment From Rose such as "Need More Help?, Try This"</p>
-            <hr class="thick-line">
-            <p><strong>Word broken down into parts:</strong>${wordParts}</p>
-            <hr class="thick-line">
-            <p><strong>Pronunciation breakdown:</strong> ${pronunciation}</p>
-            <hr class="thick-line">
-            <p>future links for more in depth information on language</p>
+            <a href="${wiktionary_url}" target="_blank">More Info</a>
         `;
         clickableWindow.style.display = 'block';
         document.getElementById('close-clickable-window').addEventListener('click', closeClickableWindow);

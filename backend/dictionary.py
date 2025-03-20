@@ -1,29 +1,41 @@
 import requests
 from bs4 import BeautifulSoup
+from collections import OrderedDict
 
-WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article']
+WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article', 'Interjection']
 
-def _parse_def_list(ol, raw_text):
+def _parse_def_list(ol, raw_text, i=1):
     decode = (lambda x: x.text) if raw_text else (lambda x: x.decode_contents())
 
-    result = {}
+    result = OrderedDict()
     for li in ol.find_all('li', recursive=False):
         sub_ol = li.select_one('ol')
 
         a_definition = decode(li.select_one('a'))
         description = li.select(':scope > *:not(ol):not(dl):not(style)')
-        description = [decode(x) for x in description]
+        description = ' '.join([decode(x) for x in description])
 
-        if len(description) == 4 and description[-1] == ')' and description[-3] == '(':
-            description = description[-2]
+        def_desc = None
+        if a_definition in description:
+            def_desc = description
         else:
-            description = ' '.join(description)
+            def_desc = f'{a_definition} {description}'
+
+        def_desc = f'{i}. {def_desc}'
+
+        print(def_desc)
+
+        # if len(description) == 4 and description[-1] == ')' and description[-3] == '(':
+        #     description = description[-2]
+        # else:
+        #     description = ' '.join(description)
 
         if sub_ol:
-            result[(a_definition, description)] = _parse_def_list(sub_ol, raw_text)
+            result[def_desc] = _parse_def_list(sub_ol, raw_text, i+1)
         else:
             examples = [decode(ex) for ex in li.select('.h-usage-example')]
-            result[(a_definition, description)] = examples
+            result[def_desc] = examples
+        i += 1
     return result
 
 # TODO: parse data better - maybe llm structuring
@@ -73,6 +85,7 @@ def get_word_info(word, language, raw_text=False):
     # ---
 
     return {
+        'url': f'https://en.wiktionary.org/wiki/{word}#{language}',
         'ipa': ipa,
         'img': img,
         'definitions': definitions
