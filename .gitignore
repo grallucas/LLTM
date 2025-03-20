@@ -1,9 +1,3 @@
-llm_core/__pycache__/**
-tts/__pycache__/**
-img_core/__pycache__/**
-llm_core/finetune/__pycache__/**
-srs/__pycache__/**
-llm_core/.ipynb_checkpoints/**
-srs/.ipynb_checkpoints/**
-backend/__pycache__/**
+**/.ipynb_checkpoints/
+**/__pycache__/
 .env

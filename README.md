@@ -6,6 +6,16 @@ This repo has all code for the MAIC LLTM (large language-teaching model) researc
 
 Go to Lucas Gral on MS Teams for questions.
 
+
+## NOTE
+
+This project is being restructured.
+
+Test notebook imports may not work since they were moved from the old structure - feel free to fix them if needed. Import everything relative to root.
+
+## This is outdated now
+
+```
 ## How to Run Things
 
 This project is intended to be run from a VSCode window sshed into Rosie with the [SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh).
@@ -40,3 +50,4 @@ For development, the intention is that subsystems will be developed/tested in no
 - Open a Git bash terminal (NOT a windows terminal)
 - Run the ssh tunnel command Git Bash on your local machine
 - Go to `localhost:8001` in your browser. You can now go to pages like `localhost:8001/static/chat/index.html`.
+```

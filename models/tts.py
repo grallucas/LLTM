@@ -1,8 +1,3 @@
-# srun -G1 --pty bash
-# source /data/ai_club/team_3_2024-25/team3-env-py312-glibc/bin/activate
-# python tts.py
-
-
 from transformers import VitsModel, AutoTokenizer
 import torch
 import numpy as np
