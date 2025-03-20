@@ -57,7 +57,7 @@ int(PORT)
 async def handle_tts(sock):
     prompt = await sock.recv()
     audio = generate_audio(prompt)
-    await sock.sendall(audio)
+    await sock.send(audio)
 
 async def main():
     server = await websockets.serve(handle_tts, "0.0.0.0", PORT)
