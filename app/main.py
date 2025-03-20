@@ -19,6 +19,7 @@ L.TOKEN_COUNT_PATH = '/data/ai_club/team_3_2024-25/tokcounts2/'
 
 # TODO: cache on disk
 tts_words = {}
+img_words = {}
 # TODO: cache in memory
 tts_msgs = {}
 
@@ -61,7 +62,16 @@ def get_word_info(word):
 
 @app.route('/img/word/<word>')
 def get_img_word(word):
-    return 'temp'
+    if word not in img_words:
+        l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
+        l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
+        l('What might be a good simple picture to help me remember this word?')
+        prompt = l(f'That sounds good to me. Give me a concise description for that picture depicting the word to help me remember it. Absolutely DO NOT include text/writing/symbols of any sort. Avoid including people if possible.')
+        print(word, '->', l._hist)
+        img_words[word] = generate_img(prompt, IMG_GEN_URL)
+
+    img = img_words[word]
+    return Response(img, mimetype='image/png')
 
 @socketio.on('connect')
 def handle_connect():
