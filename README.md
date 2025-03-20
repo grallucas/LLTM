@@ -11,7 +11,7 @@ Go to Lucas Gral on MS Teams for questions.
 
 This project is being restructured.
 
-Test notebook imports may not work since they were moved from the old structure - feel free to fix them if needed. Import everything relative to root.
+Test notebook imports may not work since they were moved from the old structure - feel free to fix them if needed. Add ./app or ./models to env.
 
 ## This is outdated now
 
