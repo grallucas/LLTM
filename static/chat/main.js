@@ -90,14 +90,16 @@ async function toggleClickableWindow(word) {
         let ctxtranslation_html = 'Loading...';
 
         // TODO: in the future this could change elements so that the page responds right away
+        // ^ DO this by making placeholder elements with certain ids, then updateData changes those elements, and await AFTER popup.
+        // ^ ALSO only do these when translation is opened
         // TODO: also should try to cache somehow (on server)?
         async function updateData(word){
-            await fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
-                ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
-                ctxtranslation_html += `<h4>${data['translated']}</h4>`;
-                ctxtranslation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
-                ctxtranslation_html += `<p>${data['explanation']}</p>`;
-            }).catch(e => console.log(e));
+            // await fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
+            //     ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
+            //     ctxtranslation_html += `<h4>${data['translated']}</h4>`;
+            //     ctxtranslation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
+            //     ctxtranslation_html += `<p>${data['explanation']}</p>`;
+            // }).catch(e => console.log(e));
 
             await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
                 pronunciation_html = data['ipa'];

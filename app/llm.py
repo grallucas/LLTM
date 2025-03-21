@@ -3,6 +3,7 @@ import tiktoken
 import getpass
 import json
 from dataclasses import dataclass
+from copy import deepcopy
 
 USER = getpass.getuser()
 
@@ -46,16 +47,23 @@ class LLM:
         self._hist = []
         self._awaiting_streamed = False
 
+    def save_state(self):
+        return deepcopy(self._hist)
+
+    def restore_state(self, state):
+        self._hist = deepcopy(state)
+
     def _hist_to_prompt(self):
         prompt = []
         tok_count = 0
         for msg in self._hist:
             content = msg.content
             is_last = msg == self._hist[-1]
-            if msg.response_format and is_last:
+            is_fmted = type(msg.response_format) == list
+            if is_fmted and is_last:
                 json_format = {k:'...' for k in msg.response_format}
                 content += f'\n\nRespond in this json: {json_format}'
-            elif msg.response_format:
+            elif is_fmted:
                 content += '\n\nRespond in JSON.'
             
             tok_count += _ntoks(content)
@@ -128,6 +136,8 @@ class LLM:
 
         if not all(k in out.keys() for k in response_format):
             raise Exception(f'Missing json keys. {out.keys()} != {response_format}')
+
+        self._hist.append(Msg('assistant', f'{out}'))
 
         return out
 
