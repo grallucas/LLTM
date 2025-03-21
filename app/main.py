@@ -73,10 +73,6 @@ def get_img_word(word):
     img = img_words[word]
     return Response(img, mimetype='image/png')
 
-@socketio.on('connect')
-def handle_connect():
-    pass
-
 @socketio.on("identify")
 def identify(identity):
     session['identity'] = identity
