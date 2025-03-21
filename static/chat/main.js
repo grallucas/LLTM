@@ -6,7 +6,7 @@
 
 const socketHost = "http://localhost:8001";
 
-const identity = "example.identity@msoe.edu";
+const identity = "example.identity";
 var sockets;
 var sendDisable = false;
 
@@ -85,14 +85,23 @@ async function toggleClickableWindow(word) {
     const clickableWindow = document.getElementById('clickable-window');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
         let pronunciation_html = 'Could not load ipa spelling.';
-        let translation_html = 'Could not load translation.';
+        let translation_html = 'Could not load dictionary.';
         let wiktionary_url = 'Could not load URL.'
+        let ctxtranslation_html = 'Loading...';
 
+        // TODO: in the future this could change elements so that the page responds right away
+        // TODO: also should try to cache somehow (on server)?
         async function updateData(word){
+            await fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
+                ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
+                ctxtranslation_html += `<h4>${data['translated']}</h4>`;
+                ctxtranslation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
+                ctxtranslation_html += `<p>${data['explanation']}</p>`;
+            }).catch(e => console.log(e));
+
             await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
-                console.log(data['ipa'])
                 pronunciation_html = data['ipa'];
-                wiktionary_url = data['url'];
+                wiktionary_url = `<a href="${data['url']}" target="_blank">More Info</a>`;
 
                 translation_html = '';
                 
@@ -138,7 +147,15 @@ async function toggleClickableWindow(word) {
 
                 <hr class="thick-line">
 
-                <p><b>Translation:</b> ${translation_html}</p>
+                ${ctxtranslation_html}
+
+                <hr class="thick-line">
+
+                ${translation_html}
+
+                <hr class="thick-line">
+
+                ${wiktionary_url}
 
                 <hr class="thick-line">
 
@@ -149,9 +166,6 @@ async function toggleClickableWindow(word) {
                 <!-- <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea> -->
             </details>
 
-            <hr class="thick-line">
-
-            <a href="${wiktionary_url}" target="_blank">More Info</a>
         `;
         clickableWindow.style.display = 'block';
         document.getElementById('close-clickable-window').addEventListener('click', closeClickableWindow);

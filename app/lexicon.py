@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup, element
 
-WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article', 'Interjection', 'Pronoun']
+WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article', 'Interjection', 'Pronoun', 'Conjunction', 'Determiner']
 
 def lookup_word(word, language):
     html = requests.get(f'https://en.wiktionary.org/api/rest_v1/page/html/{word}').text

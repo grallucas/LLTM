@@ -1,0 +1,7 @@
+Lexicon results are bad for this word: https://en.wiktionary.org/wiki/tehd%C3%A4#Finnish
+
+word window scrolls off page if too much info
+
+might be useful to show model img gen reasoning under the images.
+
+The tts is a bit bad for one-word audio clips

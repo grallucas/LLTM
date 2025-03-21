@@ -1,4 +1,3 @@
-import lexicon
 import llm as L
 
 def format_word_data(word_data):
@@ -15,12 +14,12 @@ def translate_in_ctx(context, word, word_lexicon_data):
     if word_lexicon_data:
         word_lexicon_data = format_word_data(word_lexicon_data)
 
-    llm = L.LLM('You are an Finnish -> English translator.')
+    llm = L.LLM('You are a Finnish -> English translator.')
 
     translated_word = llm(
-        f'{ctx}' +
+        f'{context}' +
         f'\n\nGiven the prior context, translate the Finnish word "{word}" into english' + 
-        (f' from one of these definitions:\n{word_data}' if word_data else '.')
+        (f' from one of these definitions:\n{word_lexicon_data}' if word_lexicon_data else '.')
         ,
         response_format=['english_word']
     )['english_word']
@@ -30,9 +29,8 @@ def translate_in_ctx(context, word, word_lexicon_data):
         response_format=['concise_generalizable_explanation']
     )['concise_generalizable_explanation']
 
-
     breakdown = llm(
-        'Break the word into its morphemes if applicable.',
+        'Break the word into its morphemes if applicable. Give me the parts separated by dashes like-this OR just give me n/a if not applicable.',
         response_format=['parts_or_n/a']
     )['parts_or_n/a']
 
