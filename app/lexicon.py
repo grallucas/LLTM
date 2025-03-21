@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup, element
 
-WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article', 'Interjection']
+WORD_TYPES = ['Adjective', 'Noun', 'Verb', 'Adverb', 'Article', 'Interjection', 'Pronoun']
 
 def lookup_word(word, language):
     html = requests.get(f'https://en.wiktionary.org/api/rest_v1/page/html/{word}').text
@@ -10,6 +10,8 @@ def lookup_word(word, language):
     # --- get sections ---
 
     section = soup.select_one(f'section:has(> h2:-soup-contains("{language}"))')
+
+    if not section: return {}
 
     pronunciation = section.select_one('section:has(> h3:-soup-contains("Pronunciation"))')
     word_type_data = {
@@ -45,7 +47,7 @@ def lookup_word(word, language):
 
     for word_type, data in word_type_data.items():
         if not data: continue
-        sub_defs = definitions[word_type] = {}
+        sub_defs = definitions[word_type] = []
 
         for li in data.select_one('ol').select('li'):
             # print('\n---\n')
@@ -64,7 +66,7 @@ def lookup_word(word, language):
                         definition += e.text
                 definition = ''.join(definition).strip()
                 if definition:
-                    sub_defs[definition] = None
+                    sub_defs.append((definition, []))
             else:
                 definition = ''
                 for e in li.children:
@@ -87,7 +89,7 @@ def lookup_word(word, language):
                 # print(')')
 
                 if definition:
-                    sub_defs[definition] = examples
+                    sub_defs.append((definition, examples))
     # --- ---
 
     return {

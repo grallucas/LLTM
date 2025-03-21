@@ -17,6 +17,17 @@ a:visited {
     color:magenta;
 }
 
+summary:hover {
+    background-color: var(--clr-surface-tonal-a30);
+    transition: 0.2s;
+}
+
+summary {
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer
+}
+
 #messages {
     display: flex;
     flex-direction: column;

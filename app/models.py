@@ -3,7 +3,7 @@ import websockets
 
 def generate_tts(prompt, host):
     async def generate():
-        async with websockets.connect(f"ws://{host}") as sock:
+        async with websockets.connect(f"ws://{host}", max_size=None) as sock:
             await sock.send(prompt)
             response = await sock.recv()
             
@@ -13,7 +13,7 @@ def generate_tts(prompt, host):
 
 def generate_img(prompt, host):
     async def generate():
-        async with websockets.connect(f"ws://{host}") as sock:
+        async with websockets.connect(f"ws://{host}", max_size=None) as sock:
             await sock.send(prompt)
             response = await sock.recv()
             

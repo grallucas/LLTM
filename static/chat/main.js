@@ -89,17 +89,23 @@ async function toggleClickableWindow(word) {
         let wiktionary_url = 'Could not load URL.'
 
         async function updateData(word){
-            await fetch(`/dictionary/${word}`).then(r => r.json()).then(data => {
+            await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
+                console.log(data['ipa'])
                 pronunciation_html = data['ipa'];
                 wiktionary_url = data['url'];
 
                 translation_html = '';
-
-                for (let k in data['definitions']) {
-                    translation_html += `<h3>${k}</h3>`;
-                    for (let k2 in data['definitions'][k]) {
-                        translation_html += `<p>${k2}</b>`;
-                        data['definitions'][k][k2].forEach(ex => {translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`});
+                
+                for (const [wordType, defs] of Object.entries(data['definitions'])){
+                    translation_html += `<h3>${wordType}</h3>`;
+                    for (const [def, examples] of defs) {
+                        translation_html += `<h4>${def}</h4>`;
+                        if (examples.length > 0){
+                            translation_html += `<details>`;
+                            translation_html += `<summary>See examples</summary>`;
+                            for (const ex of examples) translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`;
+                            translation_html += `</details>`;
+                        }
                     }
                 }
             }).catch(e => console.log(e));
@@ -128,7 +134,7 @@ async function toggleClickableWindow(word) {
             <hr class="thick-line">
 
             <details>
-                <summary style="cursor: pointer"><b>See Translation & Image.</b> Do this to see the word more often in the future.</summary>
+                <summary><b>See Translation & Image.</b> Do this to see the word more often in the future.</summary>
 
                 <hr class="thick-line">
 

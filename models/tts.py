@@ -57,11 +57,12 @@ int(PORT)
 async def handle_tts(sock):
     prompt = await sock.recv()
     audio = generate_audio(prompt)
+
     await sock.send(audio)
 
 async def main():
-    server = await websockets.serve(handle_tts, "0.0.0.0", PORT)
+    server = await websockets.serve(handle_tts, "0.0.0.0", PORT, max_size=None)
     await server.wait_closed()
 
-print('tts', f'{socket.gethostname()}:{PORT}')
+print('tts', f'{socket.gethostname()}:{PORT}', flush=True)
 asyncio.run(main())

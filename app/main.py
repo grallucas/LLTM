@@ -8,6 +8,7 @@ from flask import session
 
 import llm as L
 from models import generate_img, generate_tts
+import lexicon
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
@@ -20,6 +21,7 @@ L.TOKEN_COUNT_PATH = '/data/ai_club/team_3_2024-25/tokcounts2/'
 # TODO: cache on disk
 tts_words = {}
 img_words = {}
+lexicon_words = {}
 # TODO: cache in memory
 tts_msgs = {}
 
@@ -56,18 +58,24 @@ def get_tts_word(word):
     
     return Response(tts_words[word], mimetype='audio/wav')
 
-@app.route('/dictionary/<word>')
+@app.route('/lexicon/<word>')
 def get_word_info(word):
-    return 'temp'
+    word = clean_word(word)
+    if word not in lexicon_words:
+        lexicon_words[word] = lexicon.lookup_word(word, 'Finnish')
+
+    return lexicon_words[word]
 
 @app.route('/img/word/<word>')
 def get_img_word(word):
+    word = clean_word(word)
     if word not in img_words:
+        print('generating img for', word)
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
         l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
         l('What might be a good simple picture to help me remember this word?')
         prompt = l(f'That sounds good to me. Give me a concise description for that picture depicting the word to help me remember it. Absolutely DO NOT include text/writing/symbols of any sort. Avoid including people if possible.')
-        print(word, '->', l._hist)
+        print(l._hist)
         img_words[word] = generate_img(prompt, IMG_GEN_URL)
 
     img = img_words[word]

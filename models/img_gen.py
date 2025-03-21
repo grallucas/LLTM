@@ -30,8 +30,8 @@ async def handle_tts(sock):
     await sock.send(img_bytes)
 
 async def main():
-    server = await websockets.serve(handle_tts, "0.0.0.0", PORT)
+    server = await websockets.serve(handle_tts, "0.0.0.0", PORT, max_size=None)
     await server.wait_closed()
 
-print('img_gen', f'{socket.gethostname()}:{PORT}')
+print('img_gen', f'{socket.gethostname()}:{PORT}', flush=True)
 asyncio.run(main())
