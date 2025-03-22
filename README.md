@@ -13,10 +13,22 @@ This project is being restructured.
 
 Test notebook imports may not work since they were moved from the old structure - feel free to fix them if needed. Add ./app or ./models to env.
 
+## How to Run Things
+
+Quick instructions to improve later:
+
+- `cd` into `models`
+- run `./main.sh`
+- note the resulting node hostnames dh-nodeN
+- in a new terminal, go to the root of the repo
+- edit `./main.sh` in the root to use the hostnames from before
+- run `./main.sh` in the root and note the output ssh tunnel command
+- run the ssh tunnel command locally on your machine via git bash or wsl
+- go to localhost:8001 
+
 ## This is outdated now
 
 ```
-## How to Run Things
 
 This project is intended to be run from a VSCode window sshed into Rosie with the [SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh).
 

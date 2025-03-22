@@ -3,6 +3,8 @@ import tiktoken
 import getpass
 import json
 from dataclasses import dataclass
+from copy import deepcopy
+import threading
 
 USER = getpass.getuser()
 
@@ -18,22 +20,25 @@ enc = tiktoken.get_encoding("cl100k_base")
 def _ntoks(text):
     return enc.encode(text).__len__() + 4 # 4 extra tokens for llama: start_header, end_header, eos, 2 newlines (part of prompt format)
 
+_tok_inc_lock = threading.Lock()
+
 def _inc_tok_count(mode, amt):
     if TOKEN_COUNT_PATH is None:
         raise Exception('Set TOKEN_COUNT_PATH before infernece')
     fname = f'{USER}_{mode}.txt'
-    try:
-        with open(TOKEN_COUNT_PATH+fname, 'r') as f:
-            count = int(f.read().strip())
-    except FileNotFoundError:
-        count = 0
-    except ValueError:
-        raise Exception(f'Token Count Corrupted: {fname}')
-    
-    count += amt
+    with _tok_inc_lock:
+        try:
+            with open(TOKEN_COUNT_PATH+fname, 'r') as f:
+                count = int(f.read().strip())
+        except FileNotFoundError:
+            count = 0
+        except ValueError:
+            raise Exception(f'Token Count Corrupted: {fname}')
+        
+        count += amt
 
-    with open(TOKEN_COUNT_PATH+fname, 'w') as f:
-        f.write(str(count)+'\n')
+        with open(TOKEN_COUNT_PATH+fname, 'w') as f:
+            f.write(str(count)+'\n')
 
 @dataclass
 class Msg:
@@ -43,8 +48,14 @@ class Msg:
 
 class LLM:
     def __init__(self, sys_prompt:str=None):
-        self._hist = []
+        self._hist = [Msg('system', sys_prompt)]
         self._awaiting_streamed = False
+
+    def save_state(self):
+        return deepcopy(self._hist)
+
+    def restore_state(self, state):
+        self._hist = deepcopy(state)
 
     def _hist_to_prompt(self):
         prompt = []
@@ -52,10 +63,11 @@ class LLM:
         for msg in self._hist:
             content = msg.content
             is_last = msg == self._hist[-1]
-            if msg.response_format and is_last:
+            is_fmted = type(msg.response_format) == list
+            if is_fmted and is_last:
                 json_format = {k:'...' for k in msg.response_format}
                 content += f'\n\nRespond in this json: {json_format}'
-            elif msg.response_format:
+            elif is_fmted:
                 content += '\n\nRespond in JSON.'
             
             tok_count += _ntoks(content)
@@ -128,6 +140,8 @@ class LLM:
 
         if not all(k in out.keys() for k in response_format):
             raise Exception(f'Missing json keys. {out.keys()} != {response_format}')
+
+        self._hist.append(Msg('assistant', f'{out}'))
 
         return out
 

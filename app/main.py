@@ -2,14 +2,15 @@ import sys
 import socket
 import getpass
 from pathlib import Path
-from flask import Flask, render_template, request, send_from_directory, Response
+from flask import Flask, render_template, request, send_from_directory, Response, session
 from flask_socketio import SocketIO, emit
-from flask import session
 
 import llm as L
 from models import generate_img, generate_tts
 import lexicon
 import translate
+import feedback
+import chat
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
@@ -23,9 +24,11 @@ L.TOKEN_COUNT_PATH = '/data/ai_club/team_3_2024-25/tokcounts2/'
 tts_words = {}
 img_words = {}
 lexicon_words = {}
-# TODO: cache in memory
+
+# cached in memory
 tts_msgs = {}
 ctx_msgs = {}
+feedback_msgs = {}
 
 def clean_word(s):
     return ''.join(c for c in s.lower().strip() if c.isalpha())
@@ -101,6 +104,50 @@ def get_img_word(word):
     img = img_words[word]
     return Response(img, mimetype='image/png')
 
+@app.route('/feedback/<identity>/generate', methods=['POST'])
+def gen_feedback(identity):
+    prompt = request.get_data().decode()
+
+    if identity not in feedback_msgs:
+        feedback_msgs[identity] = []
+
+    feedback_msgs_idx = feedback_msgs[identity].__len__()
+
+    words, incorrect, state = feedback.grade_per_word(prompt)
+    per_word = {}
+    for i in incorrect:
+        per_word[i] = (state, words) # save data to stream explanations later
+
+    feedback_msgs[identity].append(per_word)
+
+    return {
+        'words': words,
+        'word_feedbacks': incorrect,
+        'feedback_id': feedback_msgs_idx
+    }
+
+@app.route('/feedback/<identity>/get/<idx>')
+def get_feedback(identity, idx):
+    feedback_msgs_idx, idx = [int(x) for x in idx.split(',')]
+
+    # print('-------------------------------------------')
+
+    if type(feedback_msgs[identity][feedback_msgs_idx][idx]) is tuple:
+        state, words = feedback_msgs[identity][feedback_msgs_idx][idx]
+        
+        # TODO: stream this data to the client in the future?
+        exp = feedback.get_word_feedback(idx, words, state)
+        exp_str = ''
+        for t in exp: exp_str += t
+        feedback_msgs[identity][feedback_msgs_idx][idx] = exp_str
+
+    # print(feedback_msgs[identity][feedback_msgs_idx][idx])
+    # print('-------------------------------------------')
+
+    return {
+        'feedback': feedback_msgs[identity][feedback_msgs_idx][idx]
+    }
+
 @socketio.on("identify")
 def identify(identity):
     session['identity'] = identity
@@ -108,7 +155,7 @@ def identify(identity):
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if 'chat' not in session:
-        session['chat'] = L.LLM('You are a Finnish language teacher. Respond one sentence at a time and don\'t use newlines.')
+        session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
     llm = session['chat']
 
     s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)

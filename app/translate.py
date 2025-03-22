@@ -25,12 +25,13 @@ def translate_in_ctx(context, word, word_lexicon_data):
     )['english_word']
 
     explanation = llm(
-        'Give a brief, one-sentence explanation generalizable to other sentences (i.e., your explanation should be unconnected from the context).',
-        response_format=['concise_generalizable_explanation']
-    )['concise_generalizable_explanation']
+        # 'Give a brief, one-sentence explanation generalizable to other sentences (i.e., your explanation should be unconnected from the context).',
+        'Give a concise explanation unconnected from the context.',
+        response_format=['explanation']
+    )['explanation']
 
     breakdown = llm(
-        'Break the word into its morphemes if applicable. Give me the parts separated by dashes like-this OR just give me n/a if not applicable.',
+        'Break the word into its root and inflections separated by dashes. It may just be one morpheme.',
         response_format=['parts_or_n/a']
     )['parts_or_n/a']
 

@@ -5,3 +5,7 @@ word window scrolls off page if too much info
 might be useful to show model img gen reasoning under the images.
 
 The tts is a bit bad for one-word audio clips
+
+feedback doesn't fix Syön jäätelö
+
+the in-ctx translation only sees the last 2 msgs, even if you translate something further back
