@@ -9,3 +9,5 @@ The tts is a bit bad for one-word audio clips
 feedback doesn't fix Syön jäätelö
 
 the in-ctx translation only sees the last 2 msgs, even if you translate something further back
+
+it would be nice for the wiktionary definitions to include content from links to the root word. Currently, a lot of word "Definitions" are `xyz form of <root word>`

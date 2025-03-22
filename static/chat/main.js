@@ -1,14 +1,8 @@
-
-//Big ups to the bbg copilot <3
-/*
- low priority - magnify window design (like textbook)
- */
-
 const socketHost = "http://localhost:8001";
 
 const identity = "example.identity";
 var sockets;
-var sendDisable = false;
+var sendDisable = true;
 
 function format_msg(text) {
     let words = text.replace(/<br>/g, ' <br> ').split(' ').filter(word => word !== '');;
@@ -45,13 +39,30 @@ function format_msg(text) {
 //     return words.join(' ');
 // }
 
+// INIT
+
+const startMessageElement = document.createElement('div');
+startMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
+startMessageElement.classList.add('bot-message');
+startMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(startMessageElement);
+
+const start_btn = startMessageElement.querySelector('button');
+start_btn.addEventListener('click', () => {
+    sockets.emit("chat-interface-start");
+    startMessageElement.innerHTML += '<span class="spinner"></span>';
+});
+
+// END INIT
+
 $('document').ready(()=>{
     sockets = io(socketHost);
     sockets.emit("identify", identity)
     sockets.on("chat-interface", (token) => {
         if(token == "<START>"){
-            respondToUser("")
-            sendDisable = true
+            startMessageElement.remove(); // TODO: a bit janky to remove this every time
+            respondToUser("");
+            sendDisable = true;
         }else if(token == "<END>"){
             last_msg = $(".bot-message").last()[0]
             last_msg.innerHTML = format_msg(last_msg.innerHTML) + '<span class="spinner"></span>'
@@ -117,6 +128,8 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             
             userMsg.innerHTML = words.join(' ');
         }).catch(e => console.log(e));;
+    }else if(sendDisable){
+        alert('Cannot send a message now')
     }
 
     const key_map = {
@@ -148,11 +161,14 @@ function addMessage(message, isUser=false, add_spinner=false) {
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
+
 function toggleClickableWindow(word, feedback_id='') {
     // const audio = new Audio(`/tts/word/${word}`);
     // audio.play().then().catch(e => {
     //     console.error('Error playing audio:', e)
     // });
+
+    word = word.replace(/"/g, '') // quotes specifically break the url
 
     const clickableWindow = document.getElementById('clickable-window');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
@@ -248,7 +264,10 @@ function toggleClickableWindow(word, feedback_id='') {
         if(feedback_id !== ''){
             fetch(`/feedback/${identity}/get/${feedback_id}`).then(r => r.json()).then(data => {
                 $('#word-feedback').last()[0].innerText = data['feedback']
-            }).catch(e => console.log(e));
+            }).catch(e => {
+                $('#word-feedback').last()[0].innerText = e;
+                console.log(e);
+            });
         }
 
         fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
