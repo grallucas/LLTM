@@ -167,7 +167,7 @@ def chat_interface(prompt):
 @socketio.on("chat-interface-start")
 def chat_interface_start():
     if 'level' not in session:
-        session['level'] = 1 #TODO change session level in UI
+        session['level'] = 0 #TODO change session level in UI
 
     if session['level'] == 0:
         chat_interface('')

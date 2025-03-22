@@ -47,6 +47,10 @@ summary {
     gap: 10px;
 }
 
+.center {
+    text-align: center;
+}
+
 #view-stats {
     flex-grow: 1;
 }
@@ -151,6 +155,7 @@ summary {
     border: 1px solid var(--clr-surface-tonal-a30);
     color: white;
     background-color: var(--clr-surface-tonal-a0);
+    font-size: 1em;
 }
 
 textarea {

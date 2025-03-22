@@ -158,13 +158,13 @@ function toggleClickableWindow(word, feedback_id='') {
            <div id="close-button-container">
             <button id="close-clickable-window">Close</button>
            </div>
-            <h2>${word}</h2>
+            <h2 class="center">${word}</h2>
 
             ${init_feedback_html}
 
             <hr class="thick-line">
 
-            <p><b>Pronunciation</b></p>
+            <p class="center"><b>Pronunciation</b></p>
 
             <p id="word-pronunciation"><span class="spinner"></span></p>
 
@@ -182,7 +182,7 @@ function toggleClickableWindow(word, feedback_id='') {
 
                 <hr class="thick-line">
 
-                <h3>In-Ctx Translation</h3>
+                <h3 class="center">Contextual Translation</h3>
                 <div id="word-translation"><span class="spinner"></span></div>
 
                 <hr class="thick-line">
@@ -222,7 +222,7 @@ function toggleClickableWindow(word, feedback_id='') {
 
             defs_html = '';
             for (const [wordType, defs] of Object.entries(data['definitions'])){
-                defs_html += `<h3>${wordType}</h3>`;
+                defs_html += `<h3 class="center">${wordType}</h3>`;
                 for (const [def, examples] of defs) {
                     defs_html += `<h4>${def}</h4>`;
                     if (examples.length > 0){
@@ -241,15 +241,23 @@ function toggleClickableWindow(word, feedback_id='') {
             $('#word-definition').last()[0].innerHTML = defs_html;
         }).catch(e => console.log(e));
 
+        let dropped_down = false;
+
         $('#word-info-dropdown').last()[0].addEventListener('click', () => {
             $('#word-img').last()[0].src = `/img/word/${word}`;
+            
+            if (dropped_down)
+                return;
+
             fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
                 translation_html = '';
-                translation_html += `<h4>${data['translated']}</h4>`;
+                translation_html += `<p class="center" style="font-size:1.5em;">"${data['translated']}"</p>`;
                 translation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
                 translation_html += `<p>${data['explanation']}</p>`;
                 $('#word-translation').last()[0].innerHTML = translation_html;
             }).catch(e => console.log(e));
+
+            dropped_down = true;
         });
     } else {
         clickableWindow.style.display = 'none';

@@ -11,3 +11,5 @@ feedback doesn't fix Syön jäätelö
 the in-ctx translation only sees the last 2 msgs, even if you translate something further back
 
 it would be nice for the wiktionary definitions to include content from links to the root word. Currently, a lot of word "Definitions" are `xyz form of <root word>`
+
+It would make more sense to have img per root word rather than EVERY word. Maybe ask a model what the root is, or ask "whats a more general term to use for an image search". Bonus: could use the more general term to pull more wiktionary definitions. This general term could be cached upon generation {"koirani": "koira"}
