@@ -17,29 +17,7 @@ function format_msg(text) {
     return words.join(' ');
 }
 
-// async function feedback_msg(text){
-//     const feedback_id = await new Promise(resolve => {
-//         sockets.emit('generate-feedback', text, done => resolve(done))
-//     });
-
-//     const resp = await fetch(`/feedback/${identity}`);
-//     const data = await resp.json();
-
-//     let words = data['words'];
-//     const feedbacks = data['feedbacks'];
-
-//     words.forEach((w,i) => {
-//         if (i in feedbacks){
-//             words[i] = `<span onclick="toggleClickableWindow('${w}', ${feedback_id})" class="word feedback-underline">${w}</span>`;
-//         }else{
-//             words[i] = `<span onclick="toggleClickableWindow('${w}')" class="word">${w}</span>`;
-//         }
-//     });
-    
-//     return words.join(' ');
-// }
-
-// INIT
+// --- INIT ---
 
 const startMessageElement = document.createElement('div');
 startMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
@@ -53,7 +31,7 @@ start_btn.addEventListener('click', () => {
     startMessageElement.innerHTML += '<span class="spinner"></span>';
 });
 
-// END INIT
+// --- SOCKET READING ---
 
 $('document').ready(()=>{
     sockets = io(socketHost);
@@ -82,12 +60,6 @@ $('document').ready(()=>{
         }else{
             const lastMessage = $(".bot-message").last()[0];
             lastMessage.innerText += token;
-            // token_lines = token.split('\n');
-            // token_lines.forEach((line, idx) => {
-            //     lastMessage.innerText += line;
-            //     if (idx < token_lines.length - 1)
-            //         lastMessage.innerHTML += '<br>';
-            // });
         }
     });
     sockets.on('disconnect', ()=>{
@@ -95,6 +67,8 @@ $('document').ready(()=>{
         window.location.reload()
     })
 });
+
+// --- MESSAGE SENDING ---
 
 document.getElementById('user-input').addEventListener('keypress', function(evt) {
     const userInput = document.getElementById('user-input');
@@ -162,6 +136,8 @@ function addMessage(message, isUser=false, add_spinner=false) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+// --- WORD WINDOW ---
+
 function toggleClickableWindow(word, feedback_id='') {
     // const audio = new Audio(`/tts/word/${word}`);
     // audio.play().then().catch(e => {
@@ -172,41 +148,6 @@ function toggleClickableWindow(word, feedback_id='') {
 
     const clickableWindow = document.getElementById('clickable-window');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
-
-        // TODO: in the future this could change elements so that the page responds right away
-        // ^ DO this by making placeholder elements with certain ids, then updateData changes those elements, and await AFTER popup.
-        // ^ ALSO only do these when translation is opened
-        // TODO: also should try to cache somehow (on server)?
-        async function updateData(word){
-            // await fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
-            //     // ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
-            //     ctxtranslation_html += `<h4>${data['translated']}</h4>`;
-            //     ctxtranslation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
-            //     ctxtranslation_html += `<p>${data['explanation']}</p>`;
-            // }).catch(e => console.log(e));
-
-            // await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
-            //     pronunciation_html = data['ipa'];
-            //     wiktionary_url = `<a href="${data['url']}" target="_blank">More Info</a>`;
-
-            //     translation_html = '';
-                
-            //     for (const [wordType, defs] of Object.entries(data['definitions'])){
-            //         translation_html += `<h3>${wordType}</h3>`;
-            //         for (const [def, examples] of defs) {
-            //             translation_html += `<h4>${def}</h4>`;
-            //             if (examples.length > 0){
-            //                 translation_html += `<details>`;
-            //                 translation_html += `<summary>See examples</summary>`;
-            //                 for (const ex of examples) translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`;
-            //                 translation_html += `</details>`;
-            //             }
-            //         }
-            //     }
-            // }).catch(e => console.log(e));
-        }
-        // await updateData(word);
-
         const init_feedback_html = feedback_id === '' ? '' : `
             <hr class="thick-line">
             <h3 style="color: rgb(53, 217, 255);">Feedback</h3>
@@ -314,6 +255,9 @@ function toggleClickableWindow(word, feedback_id='') {
         clickableWindow.style.display = 'none';
     }
 }
+
+// --- MISC ---
+
 document.getElementById('view-stats').addEventListener('click', function() {
     toggleStatsWindow();
 });
