@@ -1,9 +1,9 @@
 import importlib
 import sys
-sys.path.append("./llm_core")
 import llm as L
 import os
 import random
+
 """
 Class for the introductory converstaions with Rose
 Users aren't expected to know many words, instead being
@@ -36,6 +36,7 @@ The intended flow of this learning class is as follows:
        evaluated by another llm
      - SRS is updated (TODO)
 """
+
 class learning_llm:
     def __init__(self, vocab, language='Finnish'):
         self.language = language
@@ -119,7 +120,7 @@ class learning_llm:
 
 
 def main():
-    vocab = get_vocab()
+    vocab = get_vocab_qs()
     learn = learning_llm(vocab)
     s, sentence = learn.get_sentence('koira')
     s_string = ''
@@ -140,7 +141,7 @@ def main():
         e_string = e_string + str(tok)
     print(e_string)
 
-def get_vocab(): ### This is kind of like jeopardy. Maybe we can take advantage of that? TODO ###
+def get_vocab_qs(): ### This is kind of like jeopardy. Maybe we can take advantage of that? TODO ###
     vocab = {'koira': [
         {'s' : 'Tama on minun koirana.', 'q' : 'What is Mine?'}
     ], 'talo' : [
@@ -148,60 +149,6 @@ def get_vocab(): ### This is kind of like jeopardy. Maybe we can take advantage 
     ]
     }
     return vocab
-
-def get_finnish_words():
-    TEACHER_NAME = 'Rose' # localized to target language (regular 'e' for Finnish)
-    LEARNER_NAME = 'Lucas' # obtained from user profile
-
-    allowed_vocab = [
-        # greetings
-        'terve', 'hei',
-
-        # nouns
-        'talo',     # house
-        'vesi',     # water
-        'ystävä',   # friend
-        'huomenta', # morning
-        'velho',    # wizard
-        'suomi',    # Finland
-        'koira',    # dog
-        'nimi',     # name
-
-        # singular possessive nouns for 'nimi'
-        'nimeni',   # first person "my name"
-        'nimesi',   # second person "your name"
-        'nimensä',  # third person "his name"
-
-        # singular posessive nous for 'ystävä'
-        'ystäväni',  # first person
-        'ystäväsi',  # second person
-        'ystävänsä', # third person
-
-        # adjectives
-        'vanha',       # old
-        'hyvää',       # good
-        'suomalainen', # Finnish
-        'mukava',      # nice
-
-        # pronouns, posesives, "to be" verbs
-        'minä', 'minun', 'olen', 'olenko', # first person
-        'sinä', 'sinun', 'olet', 'oletko', # second person
-        'hän', 'hänen', 'on', 'onko',      # third person
-
-        # names
-        'matti', 'aleksi', 'sami', TEACHER_NAME.lower(), LEARNER_NAME.lower(),
-
-        # useful words
-        'kyllä', # yes
-        'ei', # no
-        'mitä', # "what/how" as in "what did you say?" or "how are you" -- about more abstract things
-        'mikä', # "what" as in "what is this?" or "what is your name?" -- about specific things
-    ]
-
-    finnish_words = ""
-    for i in range(len(allowed_vocab)):
-        finnish_words = finnish_words + allowed_vocab[i]
-    return finnish_words
 
 if __name__ == "__main__":
     main()

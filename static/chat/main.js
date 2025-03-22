@@ -11,9 +11,12 @@ var sockets;
 var sendDisable = false;
 
 function format_msg(text) {
-    let words = text.split(' ');
+    let words = text.replace(/<br>/g, ' <br> ').split(' ').filter(word => word !== '');;
 
     words.forEach((w,i) => {
+        if (w === '<br>'){
+            return;
+        }
         words[i] = `<span onclick=toggleClickableWindow('${w}') class="word">${w}</span>`
     });
     
@@ -62,8 +65,18 @@ $('document').ready(()=>{
 
             sendDisable = false
             $(".bot-message > .spinner").last()[0].remove()
+        }else if(token == "<NO-TTS>"){
+            sendDisable = false
+            $(".bot-message > .spinner").last()[0].remove()
         }else{
-            $(".bot-message").last()[0].innerText += token
+            const lastMessage = $(".bot-message").last()[0];
+            lastMessage.innerText += token;
+            // token_lines = token.split('\n');
+            // token_lines.forEach((line, idx) => {
+            //     lastMessage.innerText += line;
+            //     if (idx < token_lines.length - 1)
+            //         lastMessage.innerHTML += '<br>';
+            // });
         }
     });
     sockets.on('disconnect', ()=>{
@@ -259,7 +272,7 @@ function toggleClickableWindow(word, feedback_id='') {
         $('#word-info-dropdown').last()[0].addEventListener('click', () => {
             $('#word-img').last()[0].src = `/img/word/${word}`;
             fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
-                translation_html = ''
+                translation_html = '';
                 translation_html += `<h4>${data['translated']}</h4>`;
                 translation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
                 translation_html += `<p>${data['explanation']}</p>`;

@@ -11,9 +11,7 @@ import lexicon
 import translate
 import feedback
 import chat
-
-sys.path.append("./llm_core")
-import learning_with_variation
+import leveled_learning
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
@@ -77,7 +75,11 @@ def get_word_info(word):
 @app.route('/ctxtranslate/<identity>/<word>')
 def translate_word(identity, word):
     if identity not in ctx_msgs:
-        return 'No context yet'
+        return {
+            'translated': None,
+            'explanation': 'No context yet',
+            'breakdown': None
+        }
 
     word = clean_word(word)
 
@@ -183,7 +185,7 @@ def level1(prompt):
 
 def level0(prompt):
     if 'learning' not in session:
-        session['learning-llm'] = learning_with_variation.learning_llm(learning_with_variation.get_vocab())
+        session['learning-llm'] = leveled_learning.learning_llm(leveled_learning.get_vocab_qs())
             
         learn = session['learning-llm']
 
@@ -192,7 +194,7 @@ def level0(prompt):
             session['q'] = ''
             session['a'] = ''
         else:
-            # evaluate
+            # evaluate PRIOR answer if it exists
             s_string = session['s']
             q_string = session['q']
             a = session['a']
@@ -201,6 +203,7 @@ def level0(prompt):
             for tok in e:
                 emit("chat-interface", tok)
             emit("chat-interface", '<END>')
+            emit("chat-interface", '<NO-TTS>')
             print("Answer correct:", learn.grade())
 
         # target word selection 
@@ -222,6 +225,12 @@ def level0(prompt):
             emit("chat-interface", tok)
             q_string += tok
         emit("chat-interface", '<END>')
+
+        tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
+        emit("chat-interface", '<TTS>')
+
+        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+
         print('q_string:', q_string)
         a = learn.get_answer(target_word)
         print('answer:', a)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TTS_PORT=8001
-IMG_GEN_PORT=8002
+TTS_PORT=8221
+IMG_GEN_PORT=8222
 
 srun -G1 --pty bash -c "source /data/ai_club/team_3_2024-25/team3-env-py312-glibc/bin/activate; \
     python ./tts.py $TTS_PORT & \
