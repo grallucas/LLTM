@@ -9,6 +9,18 @@ body, html {
     color: white;
 }
 
+button {
+    padding: 10px;
+    background-color: var(--clr-surface-tonal-a0);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--clr-primary-a0);
+}
+
 a {
     color: aqua;
 }
@@ -26,6 +38,16 @@ summary {
     padding: 10px;
     border-radius: 10px;
     cursor: pointer
+}
+
+#chat-buttons {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+#view-stats {
+    flex-grow: 1;
 }
 
 #messages {
@@ -139,18 +161,6 @@ textarea {
     background-color: var(--clr-surface-tonal-a0);
 }
 
-#view-stats {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--clr-surface-tonal-a0);
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-top: 10px;
-}
-#view-stats:hover {
-    background-color: var(--clr-primary-a0);
-}
 #overlay {
     position: fixed;
     top: 0;

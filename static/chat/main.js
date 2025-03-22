@@ -118,6 +118,18 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             userMsg.innerHTML = words.join(' ');
         }).catch(e => console.log(e));;
     }
+
+    const key_map = {
+        'a': 'ä',
+        'A': 'Ä',
+        'o': 'ö',
+        'O': 'Ö'
+    };
+
+    if (evt.key in key_map && message.charAt(message.length - 1) === ':'){
+        evt.preventDefault();
+        userInput.value = message.slice(0,-1) + key_map[evt.key];
+    }
 });
 
 function addMessage(message, isUser=false, add_spinner=false) {
@@ -318,5 +330,15 @@ function closeClickableWindow() {
     clickableWindow.style.display = 'none';
 }
 
-
-
+document.querySelectorAll('.typer-button').forEach(button => {
+    button.addEventListener('click', () => {
+        document.querySelector('#user-input').value += button.innerText;
+    });
+    const key_map = {
+        'ä': 'a',
+        'Ä': 'A',
+        'ö': 'o',
+        'Ö': 'O'
+    };
+    button.title = `TIP: type this via ":${key_map[button.innerText]}"`;
+});

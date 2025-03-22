@@ -160,7 +160,7 @@ def identify(identity):
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if 'level' not in session:
-        session['level'] = 0 #TODO change session level in UI
+        session['level'] = 1 #TODO change session level in UI
     if session['level'] == 0:
         level0(prompt)
     if session['level'] == 1:
