@@ -4,6 +4,7 @@ import getpass
 import json
 from dataclasses import dataclass
 from copy import deepcopy
+import threading
 
 USER = getpass.getuser()
 
@@ -19,22 +20,25 @@ enc = tiktoken.get_encoding("cl100k_base")
 def _ntoks(text):
     return enc.encode(text).__len__() + 4 # 4 extra tokens for llama: start_header, end_header, eos, 2 newlines (part of prompt format)
 
+_tok_inc_lock = threading.Lock()
+
 def _inc_tok_count(mode, amt):
     if TOKEN_COUNT_PATH is None:
         raise Exception('Set TOKEN_COUNT_PATH before infernece')
     fname = f'{USER}_{mode}.txt'
-    try:
-        with open(TOKEN_COUNT_PATH+fname, 'r') as f:
-            count = int(f.read().strip())
-    except FileNotFoundError:
-        count = 0
-    except ValueError:
-        raise Exception(f'Token Count Corrupted: {fname}')
-    
-    count += amt
+    with _tok_inc_lock:
+        try:
+            with open(TOKEN_COUNT_PATH+fname, 'r') as f:
+                count = int(f.read().strip())
+        except FileNotFoundError:
+            count = 0
+        except ValueError:
+            raise Exception(f'Token Count Corrupted: {fname}')
+        
+        count += amt
 
-    with open(TOKEN_COUNT_PATH+fname, 'w') as f:
-        f.write(str(count)+'\n')
+        with open(TOKEN_COUNT_PATH+fname, 'w') as f:
+            f.write(str(count)+'\n')
 
 @dataclass
 class Msg:

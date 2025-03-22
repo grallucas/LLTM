@@ -18,8 +18,8 @@ def grade_per_word(sentence):
         sentence
     )
 
-    # print(cot)
-    # print('\n-----')
+    print(cot)
+    print('\n-----')
 
     errs = llm(
         'Does your feedback indicate the presence of any improvements to be made?',

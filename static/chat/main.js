@@ -20,27 +20,27 @@ function format_msg(text) {
     return words.join(' ');
 }
 
-async function feedback_msg(text){
-    await new Promise(resolve => {
-        sockets.emit('generate-feedback', text, done => resolve(done))
-    });
+// async function feedback_msg(text){
+//     const feedback_id = await new Promise(resolve => {
+//         sockets.emit('generate-feedback', text, done => resolve(done))
+//     });
 
-    const resp = await fetch(`/feedback/${identity}`);
-    const data = await resp.json();
+//     const resp = await fetch(`/feedback/${identity}`);
+//     const data = await resp.json();
 
-    let words = data['words'];
-    const feedbacks = data['feedbacks'];
+//     let words = data['words'];
+//     const feedbacks = data['feedbacks'];
 
-    words.forEach((w,i) => {
-        if (i in feedbacks){
-            words[i] = `<span onclick="toggleClickableWindow('${w}', '${feedbacks[i].replace(/"/g, "'").replace(/'/g, "\\'")}')" class="word feedback-underline">${w}</span>`;
-        }else{
-            words[i] = `<span onclick="toggleClickableWindow('${w}')" class="word">${w}</span>`;
-        }
-    });
+//     words.forEach((w,i) => {
+//         if (i in feedbacks){
+//             words[i] = `<span onclick="toggleClickableWindow('${w}', ${feedback_id})" class="word feedback-underline">${w}</span>`;
+//         }else{
+//             words[i] = `<span onclick="toggleClickableWindow('${w}')" class="word">${w}</span>`;
+//         }
+//     });
     
-    return words.join(' ');
-}
+//     return words.join(' ');
+// }
 
 $('document').ready(()=>{
     sockets = io(socketHost);
@@ -77,20 +77,36 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
     const message = userInput.value;
 
     if (evt.key === "Enter" && !sendDisable) {
-        const feedback = feedback_msg(message)
+        sockets.emit("chat-interface", message)
+        const feedback = fetch(`/feedback/${identity}/generate`, {
+            method: "POST",
+            body: message
+        })
 
         addMessage(format_msg(message), true, true);
         const userMsg = $('.user-message').last()[0]
 
-        sockets.emit("chat-interface", message)
         userInput.value = '';
 
         // await feedback then update 
-        feedback.then(data => {
-            userMsg.innerHTML = data
-        });
+        feedback.then(r => r.json()).then(data => {
+            let words = data['words'];
+            const word_feedbacks = data['word_feedbacks'];
+            const feedback_id = data['feedback_id']
+
+            words.forEach((w,i) => {
+                if (Object.values(word_feedbacks).includes(i)){
+                    words[i] = `<span onclick="toggleClickableWindow('${w}', '${feedback_id},${i}')" class="word feedback-underline">${w}</span>`;
+                }else{
+                    words[i] = `<span onclick="toggleClickableWindow('${w}')" class="word">${w}</span>`;
+                }
+            });
+            
+            userMsg.innerHTML = words.join(' ');
+        }).catch(e => console.log(e));;
     }
 });
+
 function addMessage(message, isUser=false, add_spinner=false) {
     const messagesDiv = document.getElementById('messages');
     const messageElement = document.createElement('div');
@@ -107,7 +123,7 @@ function addMessage(message, isUser=false, add_spinner=false) {
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-async function toggleClickableWindow(word, feedback='') {
+function toggleClickableWindow(word, feedback_id='') {
     // const audio = new Audio(`/tts/word/${word}`);
     // audio.play().then().catch(e => {
     //     console.error('Error playing audio:', e)
@@ -115,10 +131,6 @@ async function toggleClickableWindow(word, feedback='') {
 
     const clickableWindow = document.getElementById('clickable-window');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
-        let pronunciation_html = 'Loading... <span class="spinner"></span>';
-        let translation_html = 'Loading Definition... <span class="spinner"></span>';
-        let wiktionary_url = 'Loading Wiktionary... <span class="spinner"></span>'
-        let ctxtranslation_html = '<h3>In-Ctx Translation</h3><span class="spinner"></span>';
 
         // TODO: in the future this could change elements so that the page responds right away
         // ^ DO this by making placeholder elements with certain ids, then updateData changes those elements, and await AFTER popup.
@@ -152,13 +164,12 @@ async function toggleClickableWindow(word, feedback='') {
             //     }
             // }).catch(e => console.log(e));
         }
-        await updateData(word);
+        // await updateData(word);
 
-        const feedback_html = feedback === '' ? '' : `
+        const init_feedback_html = feedback_id === '' ? '' : `
             <hr class="thick-line">
-
             <h3 style="color: rgb(53, 217, 255);">Feedback</h3>
-            <p>${feedback}<p>
+            <p id="word-feedback"><span class="spinner"></span><p>
         `
 
         clickableWindow.innerHTML = `
@@ -167,13 +178,13 @@ async function toggleClickableWindow(word, feedback='') {
            </div>
             <h2>${word}</h2>
 
-            ${feedback_html}
+            ${init_feedback_html}
 
             <hr class="thick-line">
 
             <p><b>Pronunciation</b></p>
 
-            <p>${pronunciation_html}</p>
+            <p id="word-pronunciation"><span class="spinner"></span></p>
 
             <!-- TODO: IPA character descriptions here -->
 
@@ -185,32 +196,76 @@ async function toggleClickableWindow(word, feedback='') {
             <hr class="thick-line">
 
             <details>
-                <summary><b>See Translation & Image.</b> Do this to see the word more often in the future.</summary>
+                <summary id="word-info-dropdown"><b>See Translation & Image.</b> Do this to see the word more often in the future.</summary>
 
                 <hr class="thick-line">
 
-                ${ctxtranslation_html}
+                <h3>In-Ctx Translation</h3>
+                <div id="word-translation"><span class="spinner"></span></div>
 
                 <hr class="thick-line">
 
-                ${translation_html}
-
-                <hr class="thick-line">
-
-                ${wiktionary_url}
+                <div id="word-definition">Loading Definitions... <span class="spinner"></span></div>
 
                 <hr class="thick-line">
 
                 <div style="position:relative; border: 1px solid white; aspect-ratio: 1/1; margin-bottom: 15px;">
                     <div class="spinner" style="position:absolute; top:22%; left:22%; width:50%; height:50%; border-width: 30px;"></div>
-                    <img id="word-img" src="/img/word/${word}" style="width:100%; position:absolute;">
+                    <img id="word-img" src="#" style="width:100%; position:absolute;">
                 </div>
                 <!-- <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea> -->
             </details>
-
         `;
+
         clickableWindow.style.display = 'block';
         document.getElementById('close-clickable-window').addEventListener('click', closeClickableWindow);
+
+        if(feedback_id !== ''){
+            fetch(`/feedback/${identity}/get/${feedback_id}`).then(r => r.json()).then(data => {
+                $('#word-feedback').last()[0].innerText = data['feedback']
+            }).catch(e => console.log(e));
+        }
+
+        fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
+            if(Object.keys(data).length === 0){
+                $('#word-pronunciation').last()[0].innerText = '';
+                $('#word-definition').last()[0].innerHTML = 'Could not find definitions.';
+                return;
+            }
+
+            $('#word-pronunciation').last()[0].innerText = data['ipa'];
+
+            defs_html = '';
+            for (const [wordType, defs] of Object.entries(data['definitions'])){
+                defs_html += `<h3>${wordType}</h3>`;
+                for (const [def, examples] of defs) {
+                    defs_html += `<h4>${def}</h4>`;
+                    if (examples.length > 0){
+                        defs_html += `<details>`;
+                        defs_html += `<summary>See examples</summary>`;
+                        for (const ex of examples) defs_html += `<p style="padding-left: 2em;">• ${ex}</p>`;
+                        defs_html += `</details>`;
+                    }
+                }
+            }
+
+            if (data['url']){
+                defs_html += `<a href="${data['url']}" target="_blank">More Info</a>`;
+            }
+
+            $('#word-definition').last()[0].innerHTML = defs_html;
+        }).catch(e => console.log(e));
+
+        $('#word-info-dropdown').last()[0].addEventListener('click', () => {
+            $('#word-img').last()[0].src = `/img/word/${word}`;
+            fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
+                translation_html = ''
+                translation_html += `<h4>${data['translated']}</h4>`;
+                translation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
+                translation_html += `<p>${data['explanation']}</p>`;
+                $('#word-translation').last()[0].innerHTML = translation_html;
+            }).catch(e => console.log(e));
+        });
     } else {
         clickableWindow.style.display = 'none';
     }

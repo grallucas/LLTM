@@ -2,9 +2,8 @@ import sys
 import socket
 import getpass
 from pathlib import Path
-from flask import Flask, render_template, request, send_from_directory, Response
+from flask import Flask, render_template, request, send_from_directory, Response, session
 from flask_socketio import SocketIO, emit
-from flask import session
 
 import llm as L
 from models import generate_img, generate_tts
@@ -27,7 +26,7 @@ lexicon_words = {}
 # TODO: cache in memory
 tts_msgs = {}
 ctx_msgs = {}
-feedback_data = {}
+feedback_msgs = {}
 
 def clean_word(s):
     return ''.join(c for c in s.lower().strip() if c.isalpha())
@@ -103,12 +102,49 @@ def get_img_word(word):
     img = img_words[word]
     return Response(img, mimetype='image/png')
 
-@app.route('/feedback/<identity>')
-def get_feedback(identity):
-    if identity not in feedback_data:
-        return 'No feedback yet'
+@app.route('/feedback/<identity>/generate', methods=['POST'])
+def gen_feedback(identity):
+    prompt = request.get_data().decode()
 
-    return feedback_data[identity]
+    if identity not in feedback_msgs:
+        feedback_msgs[identity] = []
+
+    feedback_msgs_idx = feedback_msgs[identity].__len__()
+
+    words, incorrect, state = feedback.grade_per_word(prompt)
+    per_word = {}
+    for i in incorrect:
+        per_word[i] = (state, words) # save data to stream explanations later
+
+    feedback_msgs[identity].append(per_word)
+
+    return {
+        'words': words,
+        'word_feedbacks': incorrect,
+        'feedback_id': feedback_msgs_idx
+    }
+
+@app.route('/feedback/<identity>/get/<idx>')
+def get_feedback(identity, idx):
+    feedback_msgs_idx, idx = [int(x) for x in idx.split(',')]
+
+    # print('-------------------------------------------')
+
+    if type(feedback_msgs[identity][feedback_msgs_idx][idx]) is tuple:
+        state, words = feedback_msgs[identity][feedback_msgs_idx][idx]
+        
+        # TODO: stream this data to the client in the future?
+        exp = feedback.get_word_feedback(idx, words, state)
+        exp_str = ''
+        for t in exp: exp_str += t
+        feedback_msgs[identity][feedback_msgs_idx][idx] = exp_str
+
+    # print(feedback_msgs[identity][feedback_msgs_idx][idx])
+    # print('-------------------------------------------')
+
+    return {
+        'feedback': feedback_msgs[identity][feedback_msgs_idx][idx]
+    }
 
 @socketio.on("identify")
 def identify(identity):
@@ -131,23 +167,6 @@ def chat_interface(prompt):
     emit("chat-interface", '<TTS>')
 
     ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
-
-@socketio.on('generate-feedback')
-def gen_feedback(prompt):
-    words, incorrect, state = feedback.grade_per_word(prompt)
-
-    # TODO: this can be streamed to the client in the future
-    feedbacks = {}
-    for i in incorrect:
-        expl = feedback.get_word_feedback(incorrect[0], words, state)
-        expl_str = ''
-        for t in expl: expl_str += t
-
-        feedbacks[i] = expl_str
-
-    feedback_data[session['identity']] = {'feedbacks': feedbacks, 'words': words}
-
-    emit('generate-feedback', '<DONE>')
 
 print(f"Run this on your local machine in WSL or Git Bash:")
 print(f"ssh -L {PORT}:{socket.gethostname()}:{PORT} {getpass.getuser()}@{socket.gethostname()}.hpc.msoe.edu")
