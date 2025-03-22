@@ -12,6 +12,9 @@ import translate
 import feedback
 import chat
 
+sys.path.append("./llm_core")
+import learning_with_variation
+
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
@@ -154,6 +157,14 @@ def identify(identity):
 
 @socketio.on("chat-interface")
 def chat_interface(prompt):
+    if 'level' not in session:
+        session['level'] = 0 #TODO change session level in UI
+    if session['level'] == 0:
+        level0(prompt)
+    if session['level'] == 1:
+        level1(prompt)
+
+def level1(prompt):
     if 'chat' not in session:
         session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
     llm = session['chat']
@@ -169,6 +180,55 @@ def chat_interface(prompt):
     emit("chat-interface", '<TTS>')
 
     ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
+
+def level0(prompt):
+    if 'learning' not in session:
+        session['learning-llm'] = learning_with_variation.learning_llm(learning_with_variation.get_vocab())
+            
+        learn = session['learning-llm']
+
+        if 's' not in session:
+            session['s'] = ''
+            session['q'] = ''
+            session['a'] = ''
+        else:
+            # evaluate
+            s_string = session['s']
+            q_string = session['q']
+            a = session['a']
+            e = learn.evaluate(s_string, q_string, a, prompt)
+            emit("chat-interface", '<START>')
+            for tok in e:
+                emit("chat-interface", tok)
+            emit("chat-interface", '<END>')
+            print("Answer correct:", learn.grade())
+
+        # target word selection 
+        target_word = 'koira' # TODO: Get target word from SRS
+        # reset strings
+        s_string = ''
+        q_string = ''
+        # sentence
+        s, sentence = learn.get_sentence(target_word)
+        emit("chat-interface", '<START>')
+        for tok in sentence:
+            emit("chat-interface", tok)
+            s_string += tok
+        emit("chat-interface", "\n\n")
+        print('s_string:', s_string)
+        # question
+        q = learn.get_question(target_word, s, s_string)
+        for tok in q:
+            emit("chat-interface", tok)
+            q_string += tok
+        emit("chat-interface", '<END>')
+        print('q_string:', q_string)
+        a = learn.get_answer(target_word)
+        print('answer:', a)
+        # save session variables
+        session['s'] = s_string
+        session['q'] = q_string
+        session['a'] = a
 
 print(f"Run this on your local machine in WSL or Git Bash:")
 print(f"ssh -L {PORT}:{socket.gethostname()}:{PORT} {getpass.getuser()}@{socket.gethostname()}.hpc.msoe.edu")
