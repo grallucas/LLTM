@@ -10,6 +10,7 @@ import llm as L
 from models import generate_img, generate_tts
 import lexicon
 import translate
+import feedback
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
@@ -26,6 +27,7 @@ lexicon_words = {}
 # TODO: cache in memory
 tts_msgs = {}
 ctx_msgs = {}
+feedback_data = {}
 
 def clean_word(s):
     return ''.join(c for c in s.lower().strip() if c.isalpha())
@@ -101,6 +103,13 @@ def get_img_word(word):
     img = img_words[word]
     return Response(img, mimetype='image/png')
 
+@app.route('/feedback/<identity>')
+def get_feedback(identity):
+    if identity not in feedback_data:
+        return 'No feedback yet'
+
+    return feedback_data[identity]
+
 @socketio.on("identify")
 def identify(identity):
     session['identity'] = identity
@@ -122,6 +131,23 @@ def chat_interface(prompt):
     emit("chat-interface", '<TTS>')
 
     ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
+
+@socketio.on('generate-feedback')
+def gen_feedback(prompt):
+    words, incorrect, state = feedback.grade_per_word(prompt)
+
+    # TODO: this can be streamed to the client in the future
+    feedbacks = {}
+    for i in incorrect:
+        expl = feedback.get_word_feedback(incorrect[0], words, state)
+        expl_str = ''
+        for t in expl: expl_str += t
+
+        feedbacks[i] = expl_str
+
+    feedback_data[session['identity']] = {'feedbacks': feedbacks, 'words': words}
+
+    emit('generate-feedback', '<DONE>')
 
 print(f"Run this on your local machine in WSL or Git Bash:")
 print(f"ssh -L {PORT}:{socket.gethostname()}:{PORT} {getpass.getuser()}@{socket.gethostname()}.hpc.msoe.edu")

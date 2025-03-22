@@ -13,10 +13,30 @@ var sendDisable = false;
 function format_msg(text) {
     let words = text.split(' ');
 
-    const randomIndex = Math.floor(Math.random() * words.length);
+    words.forEach((w,i) => {
+        words[i] = `<span onclick=toggleClickableWindow('${w}') class="word">${w}</span>`
+    });
+    
+    return words.join(' ');
+}
+
+async function feedback_msg(text){
+    await new Promise(resolve => {
+        sockets.emit('generate-feedback', text, done => resolve(done))
+    });
+
+    const resp = await fetch(`/feedback/${identity}`);
+    const data = await resp.json();
+
+    let words = data['words'];
+    const feedbacks = data['feedbacks'];
 
     words.forEach((w,i) => {
-        words[i] = `<span onclick=toggleClickableWindow('${w}') class="word ${i == randomIndex ? "feedback-underline" : ""}">${w}</span>`
+        if (i in feedbacks){
+            words[i] = `<span onclick="toggleClickableWindow('${w}', '${feedbacks[i].replace(/"/g, "'").replace(/'/g, "\\'")}')" class="word feedback-underline">${w}</span>`;
+        }else{
+            words[i] = `<span onclick="toggleClickableWindow('${w}')" class="word">${w}</span>`;
+        }
     });
     
     return words.join(' ');
@@ -56,17 +76,28 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
     const userInput = document.getElementById('user-input');
     const message = userInput.value;
 
-    if ( evt.key === "Enter" && !sendDisable) {
-        addMessage(format_msg(message), true);
+    if (evt.key === "Enter" && !sendDisable) {
+        const feedback = feedback_msg(message)
+
+        addMessage(format_msg(message), true, true);
+        const userMsg = $('.user-message').last()[0]
+
         sockets.emit("chat-interface", message)
         userInput.value = '';
-        //respondToUser(message);
+
+        // await feedback then update 
+        feedback.then(data => {
+            userMsg.innerHTML = data
+        });
     }
 });
-function addMessage(message, isUser = false) {
+function addMessage(message, isUser=false, add_spinner=false) {
     const messagesDiv = document.getElementById('messages');
     const messageElement = document.createElement('div');
     messageElement.innerHTML = message;
+    if(add_spinner){
+        messageElement.innerHTML += `<span class="spinner"></span>`
+    }
     messageElement.classList.add('message');
     if (isUser) {
         messageElement.classList.add('user-message');
@@ -76,7 +107,7 @@ function addMessage(message, isUser = false) {
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-async function toggleClickableWindow(word) {
+async function toggleClickableWindow(word, feedback='') {
     // const audio = new Audio(`/tts/word/${word}`);
     // audio.play().then().catch(e => {
     //     console.error('Error playing audio:', e)
@@ -84,10 +115,10 @@ async function toggleClickableWindow(word) {
 
     const clickableWindow = document.getElementById('clickable-window');
     if (clickableWindow.style.display === 'none' || ! clickableWindow.innerHTML.includes(word)) {
-        let pronunciation_html = 'Could not load ipa spelling.';
-        let translation_html = 'Could not load dictionary.';
-        let wiktionary_url = 'Could not load URL.'
-        let ctxtranslation_html = 'Loading...';
+        let pronunciation_html = 'Loading... <span class="spinner"></span>';
+        let translation_html = 'Loading Definition... <span class="spinner"></span>';
+        let wiktionary_url = 'Loading Wiktionary... <span class="spinner"></span>'
+        let ctxtranslation_html = '<h3>In-Ctx Translation</h3><span class="spinner"></span>';
 
         // TODO: in the future this could change elements so that the page responds right away
         // ^ DO this by making placeholder elements with certain ids, then updateData changes those elements, and await AFTER popup.
@@ -95,39 +126,48 @@ async function toggleClickableWindow(word) {
         // TODO: also should try to cache somehow (on server)?
         async function updateData(word){
             // await fetch(`/ctxtranslate/${identity}/${word}`).then(r => r.json()).then(data => {
-            //     ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
+            //     // ctxtranslation_html = '<h3>In-Ctx Translation</h3>';
             //     ctxtranslation_html += `<h4>${data['translated']}</h4>`;
             //     ctxtranslation_html += `<p>Breakdown: <i>${data['breakdown']}</i></p>`;
             //     ctxtranslation_html += `<p>${data['explanation']}</p>`;
             // }).catch(e => console.log(e));
 
-            await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
-                pronunciation_html = data['ipa'];
-                wiktionary_url = `<a href="${data['url']}" target="_blank">More Info</a>`;
+            // await fetch(`/lexicon/${word}`).then(r => r.json()).then(data => {
+            //     pronunciation_html = data['ipa'];
+            //     wiktionary_url = `<a href="${data['url']}" target="_blank">More Info</a>`;
 
-                translation_html = '';
+            //     translation_html = '';
                 
-                for (const [wordType, defs] of Object.entries(data['definitions'])){
-                    translation_html += `<h3>${wordType}</h3>`;
-                    for (const [def, examples] of defs) {
-                        translation_html += `<h4>${def}</h4>`;
-                        if (examples.length > 0){
-                            translation_html += `<details>`;
-                            translation_html += `<summary>See examples</summary>`;
-                            for (const ex of examples) translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`;
-                            translation_html += `</details>`;
-                        }
-                    }
-                }
-            }).catch(e => console.log(e));
+            //     for (const [wordType, defs] of Object.entries(data['definitions'])){
+            //         translation_html += `<h3>${wordType}</h3>`;
+            //         for (const [def, examples] of defs) {
+            //             translation_html += `<h4>${def}</h4>`;
+            //             if (examples.length > 0){
+            //                 translation_html += `<details>`;
+            //                 translation_html += `<summary>See examples</summary>`;
+            //                 for (const ex of examples) translation_html += `<p style="padding-left: 2em;">• ${ex}</p>`;
+            //                 translation_html += `</details>`;
+            //             }
+            //         }
+            //     }
+            // }).catch(e => console.log(e));
         }
         await updateData(word);
+
+        const feedback_html = feedback === '' ? '' : `
+            <hr class="thick-line">
+
+            <h3 style="color: rgb(53, 217, 255);">Feedback</h3>
+            <p>${feedback}<p>
+        `
 
         clickableWindow.innerHTML = `
            <div id="close-button-container">
             <button id="close-clickable-window">Close</button>
            </div>
             <h2>${word}</h2>
+
+            ${feedback_html}
 
             <hr class="thick-line">
 

@@ -29,12 +29,13 @@ def grade_per_word(sentence):
     # print(errs)
     # print('\n-----')
 
+    words = _extract_words(sentence)
+
     if errs == 'n':
-        return [], [], None
+        return words, [], None
 
     s = llm.save_state()
 
-    words = _extract_words(sentence)
     incorrect = []
     for i in range(len(words)):
         sentence_w_highlight = _highlight_word(i, words)
