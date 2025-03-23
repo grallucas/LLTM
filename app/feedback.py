@@ -31,8 +31,8 @@ def grade_per_word(sentence):
 
     words = _extract_words(sentence)
 
-    if errs == 'n':
-        return words, [], None
+    # if errs == 'n':
+    #     return words, [], None
 
     s = llm.save_state()
 

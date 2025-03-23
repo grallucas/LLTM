@@ -48,7 +48,10 @@ class Msg:
 
 class LLM:
     def __init__(self, sys_prompt:str=None):
-        self._hist = [Msg('system', sys_prompt)]
+        self._hist = []
+        if sys_prompt:
+            self._hist.append(Msg('system', sys_prompt))
+            
         self._awaiting_streamed = False
 
     def save_state(self):
