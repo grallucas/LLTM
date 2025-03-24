@@ -27,7 +27,8 @@ allowed_vocab = [
 
         # adjectives
         'vanha',       # old
-        'hyvää',       # good
+        'hyvää',       # good (partitive case)
+        'hyvä',       # good
         'suomalainen', # Finnish
         'mukava',      # nice
 
@@ -37,13 +38,14 @@ allowed_vocab = [
         'hän', 'hänen', 'on', 'onko',      # third person
 
         # names
-        'matti', 'aleksi', 'sami'
+        'matti', 'aleksi', 'sami',
 
         # useful words
         'kyllä', # yes
         'ei', # no
         'mitä', # "what/how" as in "what did you say?" or "how are you" -- about more abstract things
         'mikä', # "what" as in "what is this?" or "what is your name?" -- about specific things
+        'kuka'
     ]
 
 TEACHER_NAME = 'Rossi' # localized to target language (regular 'e' for Finnish)
