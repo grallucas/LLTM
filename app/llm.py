@@ -84,7 +84,7 @@ class LLM:
 
     def _call_default(self, messages, temperature, max_tokens):
         out = client.chat.completions.create(
-            model="meta/llama-3.1-70b-instruct",
+            model="meta/llama-3.3-70b-instruct",
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature
@@ -100,7 +100,7 @@ class LLM:
         
     def _call_stream(self, messages, temperature, max_tokens):
         out = client.chat.completions.create(
-            model="meta/llama-3.1-70b-instruct",
+            model="meta/llama-3.3-70b-instruct",
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -126,7 +126,7 @@ class LLM:
 
     def _call_fmted(self, messages, temperature, max_tokens, response_format):
         out = client.chat.completions.create(
-            model="meta/llama-3.1-70b-instruct",
+            model="meta/llama-3.3-70b-instruct",
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,

@@ -2,7 +2,7 @@
 
 source /data/ai_club/team_3_2024-25/team3-env-py312-glibc/bin/activate
 
-python ./app/main.py 8001 dh-node17:8221,dh-node17:8222
+python ./app/main.py 8001 dh-node18:8221,dh-node18:8222
 
 # IDEA
 # This file will eventually be run on the BACKEND server (digital ocean, someone's laptop, mgmt node, etc).
