@@ -12,6 +12,7 @@ import translate
 import feedback
 import chat
 import leveled_learning
+import conversation_learning
 
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
@@ -160,14 +161,14 @@ def identify(identity):
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if session['level'] == 0:
-        level0(prompt)
+        learning_convo(prompt)
     if session['level'] == 1:
         level1(prompt)
 
 @socketio.on("chat-interface-start")
 def chat_interface_start():
     if 'level' not in session:
-        session['level'] = 1 #TODO change session level in UI
+        session['level'] = 0 #TODO change session level in UI
 
     if session['level'] == 0:
         chat_interface('')
@@ -191,61 +192,107 @@ def level1(prompt):
 
     ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
 
-def level0(prompt):
-    if 'learning' not in session:
+def jeopardy(prompt):
+    if 'learning-llm' not in session:
         session['learning-llm'] = leveled_learning.learning_llm(leveled_learning.get_vocab_qs())
             
-        learn = session['learning-llm']
+    learn = session['learning-llm']
 
-        if 's' not in session:
-            session['s'] = ''
-            session['q'] = ''
-            session['a'] = ''
-        else:
-            # evaluate PRIOR answer if it exists
-            s_string = session['s']
-            q_string = session['q']
-            a = session['a']
-            e = learn.evaluate(s_string, q_string, a, prompt)
-            emit("chat-interface", '<START>')
-            for tok in e:
-                emit("chat-interface", tok)
-            emit("chat-interface", '<END>')
-            emit("chat-interface", '<NO-TTS>')
-            print("Answer correct:", learn.grade())
-
-        # target word selection 
-        target_word = 'koira' # TODO: Get target word from SRS
-        # reset strings
-        s_string = ''
-        q_string = ''
-        # sentence
-        s, sentence = learn.get_sentence(target_word)
+    if 's' not in session:
+        session['s'] = ''
+        session['q'] = ''
+        session['a'] = ''
+    else:
+        # evaluate PRIOR answer if it exists
+        s_string = session['s']
+        q_string = session['q']
+        a = session['a']
+        e = learn.evaluate(s_string, q_string, a, prompt)
         emit("chat-interface", '<START>')
-        for tok in sentence:
+        for tok in e:
             emit("chat-interface", tok)
-            s_string += tok
-        emit("chat-interface", "\n\n")
-        print('s_string:', s_string)
-        # question
-        q = learn.get_question(target_word, s, s_string)
-        for tok in q:
-            emit("chat-interface", tok)
-            q_string += tok
         emit("chat-interface", '<END>')
+        emit("chat-interface", '<NO-TTS>')
+        print("Answer correct:", learn.grade())
 
-        tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
-        emit("chat-interface", '<TTS>')
+    # reset strings
+    s_string = ''
+    q_string = ''
+    # target word selection 
+    # target_word = getTargetWord(session['']) TODO: get from SRS
+    target_word = 'koira'
+    # sentence
+    s, sentence = learn.get_sentence(target_word)
+    emit("chat-interface", '<START>')
+    for tok in sentence:
+        emit("chat-interface", tok)
+        s_string += tok
+    emit("chat-interface", "\n\n")
+    print('s_string:', s_string)
+    # question
+    q = learn.get_question(target_word, s, s_string)
+    for tok in q:
+        emit("chat-interface", tok)
+        q_string += tok
+    emit("chat-interface", '<END>')
 
-        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+    tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
+    emit("chat-interface", '<TTS>')
 
-        print('q_string:', q_string)
-        a = learn.get_answer(target_word)
-        print('answer:', a)
-        # save session variables
-        session['s'] = s_string
-        session['q'] = q_string
-        session['a'] = a
+    ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+
+    print('q_string:', q_string)
+    a = learn.get_answer(target_word)
+    print('answer:', a)
+    # save session variables
+    session['s'] = s_string
+    session['q'] = q_string
+    session['a'] = a
+
+def learning_convo(prompt):
+    #initialize
+    if 'learning-llm' not in session:
+        session['learning-llm'] = conversation_learning.learning_llm()
+    if 'wait' not in session:
+        session['wait'] = 3
+        # llm starts with question
+        learning_convo_question('koira') #TODO: use SRS to get target word
+
+    # Converse on turn (wait for 2 messages before sending)
+    if session['wait'] > 1:
+        session['wait'] = session['wait'] - 1
+    else:
+        # respond to question
+        learning_convo_sentence(prompt)
+        # send question
+        learning_convo_question('koira') #TODO: use SRS to get target word
+        session['wait'] = 3
+
+def learning_convo_sentence(prompt):
+    s = session['learning-llm'].get_sentence(prompt)
+    s_string = ''
+    emit("chat-interface", '<START>')
+    for tok in s:
+        emit("chat-interface", tok)
+        s_string += tok
+    emit("chat-interface", '<END>')
+    print('s_string:', s_string)
+
+    tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
+    emit("chat-interface", '<TTS>')
+
+    ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+
+def learning_convo_question(target_word):
+    q = session['learning-llm'].get_question(target_word)
+    q_string = ''
+    emit("chat-interface", '<START>')
+    for tok in q:
+        emit("chat-interface", tok)
+        q_string += tok
+    emit("chat-interface", '<NO-TTS>')
+    print('q_string:', q_string)
+
 
 print(f"Run this on your local machine in WSL or Git Bash:")
 print(f"ssh -L {PORT}:{socket.gethostname()}:{PORT} {getpass.getuser()}@{socket.gethostname()}.hpc.msoe.edu")
