@@ -68,10 +68,10 @@ class LLM:
             is_last = msg == self._hist[-1]
             is_fmted = type(msg.response_format) == list
             if is_fmted and is_last:
-                json_format = {k:'...' for k in msg.response_format}
-                content += f'\n\nRespond in this json: {json_format}'
+                json_format = '{' + ', '.join([f'"{k}": ...' for k in msg.response_format]) + '}'
+                content += f'\n\nRespond in this json format: {json_format}'
             elif is_fmted:
-                content += '\n\nRespond in JSON.'
+                content += '\n\nRespond in JSON this time.'
             
             tok_count += _ntoks(content)
 
@@ -130,7 +130,7 @@ class LLM:
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
-            response_format={'type': 'json_object'}   
+            # response_format={'type': 'json_object'}   
         )
         out = out.choices[0].message.content
         out_toks = _ntoks(out)
@@ -139,7 +139,7 @@ class LLM:
         try:
             out = json.loads(out)
         except:
-            raise Exception(f'Bad JSON output. {out} != {resposne_format}')
+            raise Exception(f'Bad JSON output. {out} != {response_format}')
 
         if not all(k in out.keys() for k in response_format):
             raise Exception(f'Missing json keys. {out.keys()} != {response_format}')

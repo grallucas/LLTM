@@ -7,6 +7,7 @@ body, html {
     justify-content: center;
     align-items: center;
     color: white;
+    background-color: var(--clr-surface-tonal-a0);
 }
 
 button {

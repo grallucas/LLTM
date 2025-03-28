@@ -31,7 +31,8 @@ def translate_in_ctx(context, word, word_lexicon_data):
     )['explanation']
 
     breakdown = llm(
-        'Break the word into its root and inflections separated by dashes. It may just be one morpheme.',
+        # 'Break the word into its root and inflections separated by dashes. It may just be one morpheme.',
+        'Break the word into its root and parts if applicable with nothing else. Give me "part1 + part2 + ... = word" or otherwise give me "n/a"',
         response_format=['parts_or_n/a']
     )['parts_or_n/a']
 
