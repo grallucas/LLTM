@@ -139,7 +139,7 @@ class LLM:
         try:
             out = json.loads(out)
         except:
-            raise Exception(f'Bad JSON output. {out} != {resposne_format}')
+            raise Exception(f'Bad JSON output. {out} != {response_format}')
 
         if not all(k in out.keys() for k in response_format):
             raise Exception(f'Missing json keys. {out.keys()} != {response_format}')

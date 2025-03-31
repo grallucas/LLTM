@@ -4,6 +4,7 @@ import getpass
 from pathlib import Path
 from flask import Flask, render_template, request, send_from_directory, Response, session
 from flask_socketio import SocketIO, emit
+import time
 
 import llm as L
 from models import generate_img, generate_tts
@@ -253,6 +254,7 @@ def learning_convo(prompt):
     #initialize
     if 'learning-llm' not in session:
         session['learning-llm'] = conversation_learning.learning_llm()
+        convo_introduction()
     if 'wait' not in session:
         session['wait'] = 3
         # llm starts with question
@@ -290,8 +292,24 @@ def learning_convo_question(target_word):
     for tok in q:
         emit("chat-interface", tok)
         q_string += tok
+    emit("chat-interface", '<END>')
+    print('s_string:', q_string)
+
+    tts_msgs[session['identity']] = generate_tts(q_string, TTS_URL)
+    emit("chat-interface", '<TTS>')
+
+def convo_introduction():
+    intro = ("Welcome to the review mode! Here you will respond to questions and write your own "
+            "just like in a conversation. Your list of words to review is shown at the top. "
+            "Use words correctly to get them removed from your to-do list, while incorrect "
+            "words will be added to it. Don't worry though, making mistakes is part of the "
+            "process! Just try to get through the whole list at your own pace and the "
+            "learning will happen naturally.")
+
+    emit("chat-interface", '<START>')
+    emit("chat-interface", intro)
+    emit("chat-interface", '<END>')
     emit("chat-interface", '<NO-TTS>')
-    print('q_string:', q_string)
 
 
 print(f"Run this on your local machine in WSL or Git Bash:")
