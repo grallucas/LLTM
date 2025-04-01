@@ -19,7 +19,8 @@ def translate_in_ctx(context, word, word_lexicon_data):
     translated_word = llm(
         f'{context}' +
         f'\n\nGiven the prior context, translate the Finnish word "{word}" into english' + 
-        (f' from one of these definitions:\n{word_lexicon_data}' if word_lexicon_data else '.')
+        (f' from one of these definitions:\n{word_lexicon_data}' if word_lexicon_data else '.') +
+        '\nJust give me the json of the single english word (or phrase).'
         ,
         response_format=['english_word']
     )['english_word']

@@ -102,8 +102,14 @@ def get_img_word(word):
         print('generating img for', word)
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
         l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
-        l('What might be a good simple picture to help me remember this word?')
-        prompt = l(f'That sounds good to me. Give me a concise description for that picture depicting the word to help me remember it. Absolutely DO NOT include text/writing/symbols of any sort. Avoid including people if possible.')
+        l(
+            'What might be a good simple picture to help me remember this word? '
+            'Absolutely DO NOT include text/writing/symbols of any sort. Do not include hands. '
+            'Avoid including people if possible. '
+            # 'If there is no obvious description for a picture, then connect the Finnish word to a common, similar-sounding English one (e.g., "joka" -> "a joker pointing to *that* card"). '
+            'Finally, keep the image as simple as possible.'
+        )
+        prompt = l(f'That sounds good to me. Give me a concise description for that picture depicting the word to help me remember it.')
         print(l._hist)
         img_words[word] = generate_img(prompt, IMG_GEN_URL)
 

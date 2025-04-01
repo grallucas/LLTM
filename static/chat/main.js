@@ -136,6 +136,31 @@ function addMessage(message, isUser=false, add_spinner=false) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+// --- REVIEW WINDOW ---
+
+function toggleReviewWindow(words) {
+    const window = document.getElementById('review-window');
+
+    // Disable (easy case)
+    if(window.style.display !== 'none'){
+        window.style.display = 'none';
+        return
+    }
+
+    // Enable
+
+    window.style.display = '';
+    window.innerHTML = `
+        <h1 class="center">Review</h1>
+        <p>Use or look up each word to check it off!</p>
+        <hr class="thick-line">
+    `;
+
+    words.forEach(w => {
+        window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
+    });
+}
+
 // --- WORD WINDOW ---
 
 function toggleClickableWindow(word, feedback_id='') {
