@@ -75,11 +75,11 @@ class SRS:
     rating must be either 'again' or 'good'
     returns the ReviewLog
     """
-    def review_card(self, word: str, rating : str) -> ReviewLog:
+    def review_card(self, word: str, rating : str, review_datetime: datetime | None = None) -> ReviewLog:
         rating = rating.lower()
         card = self.words.get(word, Card())
         if rating == 'again':
-            card, review_log = self.f.review_card(card, Rating.Again)
+            card, review_log = self.f.review_card(card, Rating.Again, review_datetime)
             self.words[word] = card # update card
             return review_log
         elif rating == 'good':
