@@ -133,6 +133,8 @@ summary {
     background-color: var(--clr-surface-tonal-a10);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-left: 20px;
+    overflow-y: scroll;
+    max-height: 100vh;
 }
 
 #chatbot {
@@ -214,6 +216,9 @@ textarea {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-right: 20px; /* Space between clickable window and chat window */
     position: relative;
+
+    /* overflow-y: scroll;
+    height: 100vh; */
 }
 #close-button-container {
     position: absolute;

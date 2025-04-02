@@ -21,11 +21,11 @@ def grade_per_word(sentence):
     print(cot)
     print('\n-----')
 
-    # errs = llm(
-    #     'Does your feedback indicate the presence of any improvements to be made?',
-    #     response_format=['y/n']
-    # )['y/n']
-    errs = llm('Does your feedback indicate the presence of any improvements to be made?')
+    errs = llm(
+        'Does your feedback indicate the presence of any improvements to be made?',
+        response_format=['y/n']
+    )['y/n']
+    # errs = llm('Does your feedback indicate the presence of any improvements to be made?')
 
     # print(errs)
     # print('\n-----')
@@ -41,14 +41,14 @@ def grade_per_word(sentence):
     for i in range(len(words)):
         sentence_w_highlight = _highlight_word(i, words)
         
-        # applies = llm(
-        #     f'Does your feedback affect the highlighted word?\n\n{sentence_w_highlight}',
-        #     response_format=['y/n']
-        # )['y/n']
-
         applies = llm(
-            f'Does your feedback affect the highlighted word?\n\n{sentence_w_highlight}'
-        )
+            f'Does your feedback affect the highlighted word?\n\n{sentence_w_highlight}',
+            response_format=['y/n']
+        )['y/n']
+
+        # applies = llm(
+        #     f'Does your feedback affect the highlighted word?\n\n{sentence_w_highlight}'
+        # )
 
         # print(applies, sentence_w_highlight)
         if applies == 'y':

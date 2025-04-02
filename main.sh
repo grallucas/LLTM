@@ -2,7 +2,7 @@
 
 source /data/ai_club/team_3_2024-25/team3-env-py312-glibc/bin/activate
 
-NODE=dh-node17
+NODE=dh-node20
 
 python ./app/main.py 8001 ${NODE}:8221,${NODE}:8222
 
