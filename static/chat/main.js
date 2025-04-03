@@ -19,16 +19,46 @@ function format_msg(text) {
 
 // --- INIT ---
 
-const startMessageElement = document.createElement('div');
-startMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
-startMessageElement.classList.add('bot-message');
-startMessageElement.classList.add('message');
-document.getElementById('messages').appendChild(startMessageElement);
+const convMessageElement = document.createElement('div');
+convMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
+convMessageElement.classList.add('bot-message');
+convMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(convMessageElement);
 
-const start_btn = startMessageElement.querySelector('button');
-start_btn.addEventListener('click', () => {
+const conv_btn = convMessageElement.querySelector('button');
+conv_btn.addEventListener('click', () => {
     sockets.emit("chat-interface-start");
-    startMessageElement.innerHTML += '<span class="spinner"></span>';
+    convMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(revMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
+});
+
+const revMessageElement = document.createElement('div');
+revMessageElement.innerHTML = '<button><b>Click</b> to Start the Review!</button>';
+revMessageElement.classList.add('bot-message');
+revMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(revMessageElement);
+
+const rev_btn = revMessageElement.querySelector('button');
+rev_btn.addEventListener('click', () => {
+    sockets.emit("chat-interface-start"); // TODO update
+    revMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
+});
+
+const learnMessageElement = document.createElement('div');
+learnMessageElement.innerHTML = '<button><b>Click</b> to Start the Learning!</button>';
+learnMessageElement.classList.add('bot-message');
+learnMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(learnMessageElement);
+
+const learn_btn = learnMessageElement.querySelector('button');
+learn_btn.addEventListener('click', () => {
+    sockets.emit("chat-interface-start"); // TODO update
+    learnMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(revMessageElement)
 });
 
 // --- SOCKET READING ---
@@ -38,7 +68,7 @@ $('document').ready(()=>{
     sockets.emit("identify", identity)
     sockets.on("chat-interface", (token) => {
         if(token == "<START>"){
-            startMessageElement.remove(); // TODO: a bit janky to remove this every time
+            convMessageElement.remove(); // TODO: a bit janky to remove this every time
             respondToUser("");
             sendDisable = true;
         }else if(token == "<END>"){
