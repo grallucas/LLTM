@@ -256,19 +256,26 @@ def learning_convo(prompt):
         session['learning-llm'] = conversation_learning.learning_llm()
         convo_introduction()
     if 'wait' not in session:
-        session['wait'] = 3
+        session['wait'] = 2
         # llm starts with question
-        learning_convo_question('koira') #TODO: use SRS to get target word
+        q_string = learning_convo_question('koira') #TODO: use SRS to get target word
+        tts_msgs[session['identity']] = generate_tts(q_string, TTS_URL)
+        emit("chat-interface", '<TTS>')
 
     # Converse on turn (wait for 2 messages before sending)
     if session['wait'] > 1:
         session['wait'] = session['wait'] - 1
     else:
         # respond to question
-        learning_convo_sentence(prompt)
+        s_string = learning_convo_sentence(prompt)
+        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
         # send question
-        learning_convo_question('koira') #TODO: use SRS to get target word
-        session['wait'] = 3
+        q_string = learning_convo_question('koira') #TODO: use SRS to get target word
+        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+        tts_msgs[session['identity']] = generate_tts(s_string + '\n \n \n' + q_string, TTS_URL)
+        emit("chat-interface", '<TTS>')
+        session['wait'] = 2
+        print('CTX HISTORY:', ctx_msgs)
 
 def learning_convo_sentence(prompt):
     s = session['learning-llm'].get_sentence(prompt)
@@ -279,6 +286,7 @@ def learning_convo_sentence(prompt):
         s_string += tok
     emit("chat-interface", '<END>')
     print('s_string:', s_string)
+    return s_string
 
     tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
     emit("chat-interface", '<TTS>')
@@ -293,7 +301,8 @@ def learning_convo_question(target_word):
         emit("chat-interface", tok)
         q_string += tok
     emit("chat-interface", '<END>')
-    print('s_string:', q_string)
+    print('q_string:', q_string)
+    return q_string
 
     tts_msgs[session['identity']] = generate_tts(q_string, TTS_URL)
     emit("chat-interface", '<TTS>')
