@@ -27,8 +27,9 @@ document.getElementById('messages').appendChild(convMessageElement);
 
 const conv_btn = convMessageElement.querySelector('button');
 conv_btn.addEventListener('click', () => {
-    sockets.emit("chat-interface-start");
+    sockets.emit("conversation-mode");
     convMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
     document.getElementById('messages').removeChild(learnMessageElement)
 });
@@ -41,9 +42,10 @@ document.getElementById('messages').appendChild(revMessageElement);
 
 const rev_btn = revMessageElement.querySelector('button');
 rev_btn.addEventListener('click', () => {
-    sockets.emit("chat-interface-start"); // TODO update
+    sockets.emit("review-mode"); // TODO update
     revMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(revMessageElement)
     document.getElementById('messages').removeChild(learnMessageElement)
 });
 
@@ -55,10 +57,11 @@ document.getElementById('messages').appendChild(learnMessageElement);
 
 const learn_btn = learnMessageElement.querySelector('button');
 learn_btn.addEventListener('click', () => {
-    sockets.emit("chat-interface-start"); // TODO update
+    sockets.emit("learn-mode"); // TODO update
     learnMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
 });
 
 // --- SOCKET READING ---
@@ -95,6 +98,9 @@ $('document').ready(()=>{
     sockets.on('disconnect', ()=>{
         confirm("Server disconnected")
         window.location.reload()
+    });
+    sockets.on('srs-update', (srs_words)=>{
+        toggleReviewWindow(srs_words)
     })
 });
 
@@ -172,10 +178,14 @@ function toggleReviewWindow(words) {
     const window = document.getElementById('review-window');
 
     // Disable (easy case)
-    if(window.style.display !== 'none'){
-        window.style.display = 'none';
-        return
-    }
+    // if(window.style.display !== 'none'){
+    //     window.style.display = 'none';
+    //     return
+    // } 
+    // else if (words.length == 0) {
+    //     window.style.display = 'none'
+    //     return
+    // }
 
     // Enable
 
@@ -185,8 +195,8 @@ function toggleReviewWindow(words) {
         <p>Use or look up each word to check it off!</p>
         <hr class="thick-line">
     `;
-
-    words.forEach(w => {
+    split_words = words.split(" ")
+    split_words.forEach(w => {
         window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
     });
 }
