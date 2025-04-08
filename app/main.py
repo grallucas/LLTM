@@ -35,8 +35,14 @@ lexicon_words = {}
 tts_msgs = {}
 ctx_msgs = {}
 feedback_msgs = {}
-global_session = {}
-srs_correct_incorrect = {'correct':[], 'incorrect':[]}
+global_srs = {} #{identity : srs}
+
+#TODO learn mode with new words on initialization 
+#TODO Duolingo beginner words
+
+#TODO conversation mode WITHOUT review panel and .10x srs weight
+#       Note: fsrs does NOT have a way to add weight to updates. Workaround needed
+
 tomorrow = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1) #datetime.now is not timezone aware
 
 def clean_word(s):
@@ -137,12 +143,9 @@ def gen_feedback(identity):
     for i in incorrect:
         per_word[i] = (state, words) # save data to stream explanations later
 
-    #store for srs
-    srs_correct_incorrect = {'correct':[], 'incorrect':[]}
+    #update srs based on feedback
     correct, incorrect = get_correct_incorrect(words, incorrect)
-    srs_correct_incorrect['correct'] = correct
-    srs_correct_incorrect['incorrect'] = incorrect
-    srs_update(correct, incorrect, global_session['srs'])
+    srs_update(correct, incorrect, global_srs[identity])
 
     feedback_msgs[identity].append(per_word)
 
@@ -174,6 +177,12 @@ def get_feedback(identity, idx):
         'feedback': feedback_msgs[identity][feedback_msgs_idx][idx]
     }
 
+@app.route('/srs/review/<identity>/<word>')
+def srs_review_route_again(identity, word):
+    srs = global_srs[identity]
+    print('reviewing in srs route. Word, "again":', word, ) #TODO clean up
+    srs.review(word, 'again')
+
 @socketio.on("identify")
 def identify(identity):
     session['identity'] = identity
@@ -181,49 +190,62 @@ def identify(identity):
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if session['level'] == 'conversation':
-        chat_interface(prompt)
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect'])
+        if 'chat' not in session:
+            session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
+        llm = session['chat']
+        s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
+        msg = ''
+        emit("chat-interface", '<START>')
+        for tok in s:
+            emit("chat-interface", tok)
+            msg += tok
+        emit("chat-interface", '<END>')
+        tts_msgs[session['identity']] = generate_tts(msg, TTS_URL)
+        emit("chat-interface", '<TTS>')
+        
+        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
+        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
     if session['level'] == 'review':
         print('before prompt')
         learning_convo(prompt)
         print('after prompt')
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect'])
+        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
         # update review screen with new due words
-        update_review_panel(session['srs'])
+        update_review_panel(global_srs[session['identity']])
     if session['level'] == 'learn':
         learning_convo(prompt)
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect'])
+        update_review_panel(global_srs[session['identity']])
+        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
     
 
-def initialize(level='conversation'):
+def initialize(identity, level='conversation'):
     if 'level' not in session:
-        session['level'] = level
-    if 'srs' not in session:
+        session['level'] = level #TODO global level of identidies
+    if identify not in global_srs:
         srs = SRS.SRS()
         srs.add_card('koira')
         srs.add_card('velho')
         srs.add_card('uusi')
         srs.add_card('vanha')
         srs.add_card('sinulla')
-        session['srs'] = srs
-    global_session = session
+        global_srs[identity] = srs #TODO updated correctly?
 
 
 @socketio.on('conversation-mode')
 def conversation_mode():
-    initialize('conversation')
+    initialize('conversation', session['identity'])
     chat_interface('You start. Keep this interactive by asking ME questions.')
 
 @socketio.on('review-mode')
 def review_mode():
-    initialize('review')
+    initialize('review', session['identity'])
     # update review screen with new due words
     update_review_panel(session['srs'])
     learning_convo('You start. Keep this interactive by asking ME questions.')
 
 @socketio.on('learn-mode')
 def learn_mode():
-    initialize('learn')
+    initialize('learn', session['identity'])
     learning_convo('You start. Keep this interactive by asking ME questions.')
 
 
@@ -332,7 +354,7 @@ def learning_convo(prompt):
 
 def get_target_word(srs):
     print('due before tomorrow words:', srs.get_due_before_date(tomorrow)) #TODO clean up
-    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0]
+    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0] #TODO better else statement 
     print('target word =', target_word) #TODO clean up
     return target_word
 
@@ -384,6 +406,7 @@ def convo_introduction():
 This method updates the session's SRS object based on 
 two lists: [correct] and [incorrect]'''
 def srs_update(correct : list, incorrect : list, srs) -> None:
+    print('srs currently due words:', srs.get_due_before_date(tomorrow)) #TODO clean up
     print('srs_update correct:', correct)
     print('srs_update incorrect:', incorrect)
     for word in incorrect:
@@ -392,6 +415,7 @@ def srs_update(correct : list, incorrect : list, srs) -> None:
     for word in correct:
         print('grading correct word:', word) #TODO clean up
         srs.review_card(word, 'good')
+    print('srs due words after srs_update:', srs.get_due_before_date(tomorrow)) #TODO clean up
 
 '''
 This method is a helper for extracting the correct and incorrect words from the grade_per_word method.

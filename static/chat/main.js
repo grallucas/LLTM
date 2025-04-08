@@ -324,6 +324,9 @@ function toggleClickableWindow(word, feedback_id='') {
 
             dropped_down = true;
         });
+
+        // TODO test SRS grade functionality
+        fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
     } else {
         clickableWindow.style.display = 'none';
     }
