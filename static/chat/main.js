@@ -19,16 +19,49 @@ function format_msg(text) {
 
 // --- INIT ---
 
-const startMessageElement = document.createElement('div');
-startMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
-startMessageElement.classList.add('bot-message');
-startMessageElement.classList.add('message');
-document.getElementById('messages').appendChild(startMessageElement);
+const convMessageElement = document.createElement('div');
+convMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
+convMessageElement.classList.add('bot-message');
+convMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(convMessageElement);
 
-const start_btn = startMessageElement.querySelector('button');
-start_btn.addEventListener('click', () => {
-    sockets.emit("chat-interface-start");
-    startMessageElement.innerHTML += '<span class="spinner"></span>';
+const conv_btn = convMessageElement.querySelector('button');
+conv_btn.addEventListener('click', () => {
+    sockets.emit("conversation-mode");
+    convMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(revMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
+});
+
+const revMessageElement = document.createElement('div');
+revMessageElement.innerHTML = '<button><b>Click</b> to Start the Review!</button>';
+revMessageElement.classList.add('bot-message');
+revMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(revMessageElement);
+
+const rev_btn = revMessageElement.querySelector('button');
+rev_btn.addEventListener('click', () => {
+    sockets.emit("review-mode"); // TODO update
+    revMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(revMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
+});
+
+const learnMessageElement = document.createElement('div');
+learnMessageElement.innerHTML = '<button><b>Click</b> to Start the Learning!</button>';
+learnMessageElement.classList.add('bot-message');
+learnMessageElement.classList.add('message');
+document.getElementById('messages').appendChild(learnMessageElement);
+
+const learn_btn = learnMessageElement.querySelector('button');
+learn_btn.addEventListener('click', () => {
+    sockets.emit("learn-mode"); // TODO update
+    learnMessageElement.innerHTML += '<span class="spinner"></span>';
+    document.getElementById('messages').removeChild(convMessageElement)
+    document.getElementById('messages').removeChild(revMessageElement)
+    document.getElementById('messages').removeChild(learnMessageElement)
 });
 
 // --- SOCKET READING ---
@@ -38,7 +71,7 @@ $('document').ready(()=>{
     sockets.emit("identify", identity)
     sockets.on("chat-interface", (token) => {
         if(token == "<START>"){
-            startMessageElement.remove(); // TODO: a bit janky to remove this every time
+            convMessageElement.remove(); // TODO: a bit janky to remove this every time
             respondToUser("");
             sendDisable = true;
         }else if(token == "<END>"){
@@ -65,6 +98,9 @@ $('document').ready(()=>{
     sockets.on('disconnect', ()=>{
         confirm("Server disconnected")
         window.location.reload()
+    });
+    sockets.on('srs-update', (srs_words)=>{
+        toggleReviewWindow(srs_words)
     })
 });
 
@@ -142,10 +178,14 @@ function toggleReviewWindow(words) {
     const window = document.getElementById('review-window');
 
     // Disable (easy case)
-    if(window.style.display !== 'none'){
-        window.style.display = 'none';
-        return
-    }
+    // if(window.style.display !== 'none'){
+    //     window.style.display = 'none';
+    //     return
+    // } 
+    // else if (words.length == 0) {
+    //     window.style.display = 'none'
+    //     return
+    // }
 
     // Enable
 
@@ -155,8 +195,8 @@ function toggleReviewWindow(words) {
         <p>Use or look up each word to check it off!</p>
         <hr class="thick-line">
     `;
-
-    words.forEach(w => {
+    split_words = words.split(" ")
+    split_words.forEach(w => {
         window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
     });
 }
@@ -284,6 +324,9 @@ function toggleClickableWindow(word, feedback_id='') {
 
             dropped_down = true;
         });
+
+        // TODO test SRS grade functionality
+        fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
     } else {
         clickableWindow.style.display = 'none';
     }
