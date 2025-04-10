@@ -92,24 +92,29 @@ class SRS:
     def num_words(self) -> int:
         return len(self.words)
 
-    def output(self) -> dict:
+    def serialize(self) -> dict:
         card_dict = {}
         for i in dict(self.words):
             card_dict[i] = self.words[i].to_dict()
 
-        # json_output = json.dumps(card_dict)
+        return json.dumps(card_dict)
         #output_file = open("output.json", "w")
         #json.dump(card_dict, output_file, indent=6)
-
-        return card_dict
+    
+    # take dict of serialized JSON cards and remake dictionary
+    # keys = word (str)
+    # values = card (dictionary)
+    def deserialize(self, serialized_dict) -> None:
+        cards_dict = json.loads(serialized_dict)
+        for i in cards_dict:
+            self.words[i] = Card.from_dict(cards_dict[i])
 
     def get_due_before_date(self, date:datetime):
         keys = self.words.keys()
         return_list = []
         for key in keys:
-            return_list.append(key)
-            if self.words[key].due > date:
-                break
+            if self.words[key].due < date:
+                return_list.append(key)
         return return_list
         #get all keys
         #iterate until due is after date

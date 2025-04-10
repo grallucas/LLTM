@@ -42,7 +42,7 @@ document.getElementById('messages').appendChild(revMessageElement);
 
 const rev_btn = revMessageElement.querySelector('button');
 rev_btn.addEventListener('click', () => {
-    sockets.emit("review-mode"); // TODO update
+    sockets.emit("review-mode");
     revMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
@@ -57,7 +57,7 @@ document.getElementById('messages').appendChild(learnMessageElement);
 
 const learn_btn = learnMessageElement.querySelector('button');
 learn_btn.addEventListener('click', () => {
-    sockets.emit("learn-mode"); // TODO update
+    sockets.emit("learn-mode");
     learnMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
@@ -96,6 +96,7 @@ $('document').ready(()=>{
         }
     });
     sockets.on('disconnect', ()=>{
+        // fetch(`/save-on-disconnect/${identity}`).catch(e => console.log(e));
         confirm("Server disconnected")
         window.location.reload()
     });
@@ -122,6 +123,14 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
         userInput.value = '';
 
+        // TODO this does work, just not in the right spot?
+        // update review pannel with due words (TODO make this not happen in conversation mode)
+        srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
+        // console.log('java srs review pannel string:');
+        // console.log(srs_due_str);
+        // toggleReviewWindow(srs_due_str);
+
+
         // await feedback then update 
         feedback.then(r => r.json()).then(data => {
             let words = data['words'];
@@ -138,6 +147,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             
             userMsg.innerHTML = words.join(' ');
         }).catch(e => console.log(e));;
+        
     }else if(sendDisable){
         alert('Cannot send a message now')
     }
@@ -175,6 +185,7 @@ function addMessage(message, isUser=false, add_spinner=false) {
 // --- REVIEW WINDOW ---
 
 function toggleReviewWindow(words) {
+    console.log('words:', words)
     const window = document.getElementById('review-window');
 
     // Disable (easy case)
@@ -195,7 +206,7 @@ function toggleReviewWindow(words) {
         <p>Use or look up each word to check it off!</p>
         <hr class="thick-line">
     `;
-    split_words = words.split(" ")
+    split_words = words.split(" ");
     split_words.forEach(w => {
         window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
     });
