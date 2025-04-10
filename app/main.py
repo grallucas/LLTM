@@ -34,20 +34,29 @@ tts_words = {}
 img_words = {}
 lexicon_words = {}
 
-# cached in memory
+# Global Variables (cached in memory)
 tts_msgs = {}
 ctx_msgs = {}
 feedback_msgs = {}
 global_srs = {} #{identity : srs}
 global_language_progress = {} #{identity : language_progress}
+session_language = 'Finnish'
 
-save_path = './SolloquyLanguageLearning/saves'
+# Path settings
+USER = getpass.getuser()
+save_path = './ColloquyLanguageLearning/saves'
+home_path = '/home'
+save_path = os.path.join(home_path, USER, save_path)
 
 #TODO:
     #check srs updates
         #spam same word -> other words don't get removed
         #words should be removed after correct enough
         #try marking all as incorrect and make sure they DONT go away
+    #clicking word automatically reviews it as 'again'
+        #change to only be on definition look-up
+    #target word fails on empty srs
+        #make a longer if statment to catch both empty reviews and empty srs (generate new due word with lp)
 
 #TODO conversation mode WITHOUT review panel and .10x srs weight
 #       Note: fsrs does NOT have a way to add weight to updates. Workaround needed or drop
@@ -91,7 +100,7 @@ def get_tts_word(word):
 def get_word_info(word):
     word = clean_word(word)
     if word not in lexicon_words:
-        lexicon_words[word] = lexicon.lookup_word(word, 'Finnish')
+        lexicon_words[word] = lexicon.lookup_word(word, session_language)
 
     return lexicon_words[word]
 
@@ -107,7 +116,7 @@ def translate_word(identity, word):
     word = clean_word(word)
 
     if word not in lexicon_words:
-        lexicon_words[word] = lexicon.lookup_word(word, 'Finnish')
+        lexicon_words[word] = lexicon.lookup_word(word, session_language)
 
     translated_word, explanation, breakdown = translate.translate_in_ctx(ctx_msgs[identity], word, lexicon_words[word])
 
@@ -123,7 +132,7 @@ def get_img_word(word):
     if word not in img_words:
         print('generating img for', word)
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
-        l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
+        l(f'Concisely Translate this {session_language} word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
         l(
             'What might be a good simple picture to help me remember this word? '
             'Absolutely DO NOT include text/writing/symbols of any sort. Do not include hands. '
@@ -236,10 +245,10 @@ def initialize(identity):
         language_progress_path = os.path.join(PATH, 'language_progress.json')
         with open(language_progress_path, 'r') as file:
             language_progress_json_string = json.load(file)
-            lp = language_progress.language_progress([], "Finnish")
+            lp = language_progress.language_progress([], session_language)
             global_language_progress[identity] = lp
     else:
-        lp = language_progress.language_progress(language_progress.intro_words, 'Finnish')
+        lp = language_progress.language_progress(language_progress.intro_words, session_language)
         global_language_progress[identity] = lp
         srs = SRS.SRS()
         global_srs[identity] = srs
@@ -315,7 +324,7 @@ def learning_convo(prompt, identity, learning_llm):
         print('CTX HISTORY:', ctx_msgs)
 
 def get_target_word(srs):
-    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0] #TODO better else statement 
+    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0] #TODO better else statement  (this fails on empty srs)
     print('target word =', target_word) #TODO clean up
     return target_word
 
