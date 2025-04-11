@@ -29,7 +29,7 @@ const conv_btn = convMessageElement.querySelector('button');
 conv_btn.addEventListener('click', () => {
     sockets.emit("conversation-mode");
     convMessageElement.innerHTML += '<span class="spinner"></span>';
-    document.getElementById('messages').removeChild(convMessageElement)
+    // document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
     document.getElementById('messages').removeChild(learnMessageElement)
 });
@@ -188,6 +188,10 @@ function toggleReviewWindow(words) {
     //     window.style.display = 'none'
     //     return
     // }
+    if (words.length == 0) {
+        window.style.display = 'none'
+        return
+    }
 
     // Enable
 
