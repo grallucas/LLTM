@@ -30,6 +30,7 @@ class language_progress():
             word = l('Come up with a new word for the user to learn. Respond the ONLY the word and NOTHING else. '
                      f'List of words: {self.known_words}')
             word = str(word).split(' ')[0] # take first word if multiple are given
+            self.known_words.append(word)
             return word
         
     def add_word(self, word : str) -> None:

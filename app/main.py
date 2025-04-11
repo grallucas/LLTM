@@ -60,8 +60,6 @@ save_path = os.path.join(home_path, USER, save_path)
 
 #TODO learning mode = review + learn mode, add new card button
 
-#TODO conversation mode with NO SRS for NOW
-
 #*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*
 
 #TODO counter for incorrect words before reviewing as incorrect
@@ -210,6 +208,11 @@ def srs_review_route_again(identity, word):
     srs = global_srs[identity]
     print('reviewing in srs route. Word, "again":', word, )
     srs.review_card(word, 'again') 
+    return ''
+
+@app.route('/addwords/<identity>')
+def route_add_words(identity):
+    add_words(5, global_srs[identity], global_language_progress[identity])
     return ''
 
 @socketio.on("identify")
@@ -417,7 +420,7 @@ javascript end (main.js)'''
 def update_review_panel(identity):
     string_words_due = ''
     if global_mode[identity] != 'conversation':
-        time.sleep(5)
+        time.sleep(5) #TODO better solution than this
         srs = global_srs[identity]
         words_due = srs.get_due_before_date(tomorrow)
         for word in words_due:

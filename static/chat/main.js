@@ -124,6 +124,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
         // await feedback then update 
         feedback.then(r => r.json()).then(data => {
+            const words = data['words']
             const word_feedbacks = data['word_feedbacks'];
             const feedback_id = data['feedback_id']
 
@@ -175,7 +176,6 @@ function addMessage(message, isUser=false, add_spinner=false) {
 // --- REVIEW WINDOW ---
 
 function toggleReviewWindow(words) {
-    console.log('words:', words)
     const window = document.getElementById('review-window');
 
     // Disable (easy case)
@@ -189,21 +189,36 @@ function toggleReviewWindow(words) {
     // }
     if (words.length == 0) {
         window.style.display = 'none'
-        return
+    } else {
+        window.replaceChildren()
+        window.style.display = ''
+        const newWordElement = document.createElement('div');
+        newWordElement.innerHTML = '<button><b>Click</b> to add new words</button>';
+        const newWordButton = newWordElement.querySelector('button');
+        newWordButton.addEventListener('click', () => {
+            fetch(`/addwords/${identity}`);
+            // update review screen
+            srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
+        });
+        document.getElementById('review-window').appendChild(newWordElement)
+        
+        const msgPara = document.createElement('p');
+        msgPara.textContent = 'Use or look up each word to check it off!';
+        window.appendChild(msgPara);
+
+        const hr = document.createElement('hr');
+        hr.classList.add('thick-line');
+        window.appendChild(hr);
+
+        const split_words = words.split(" ");
+        split_words.forEach(w => {
+            const p = document.createElement('p');
+            p.className = 'word';
+            p.textContent = w;
+            p.onclick = () => toggleClickableWindow(w);
+            window.appendChild(p);
+        });
     }
-
-    // Enable
-
-    window.style.display = '';
-    window.innerHTML = `
-        <h1 class="center">Review</h1>
-        <p>Use or look up each word to check it off!</p>
-        <hr class="thick-line">
-    `;
-    split_words = words.split(" ");
-    split_words.forEach(w => {
-        window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
-    });
 }
 
 // --- WORD WINDOW ---
