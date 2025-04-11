@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, emit
 import time
 import os
 import json
+import string
 
 import llm as L
 from models import generate_img, generate_tts
@@ -53,11 +54,16 @@ save_path = os.path.join(home_path, USER, save_path)
         #spam same word -> other words don't get removed
         #words should be removed after correct enough
         #try marking all as incorrect and make sure they DONT go away
-    #clicking word automatically reviews it as 'again'
-        #change to only be on definition look-up
-    #target word fails on empty srs
-        #make a longer if statment to catch both empty reviews and empty srs (generate new due word with lp)
 
+#TODO catch the response format fail 
+
+#TODO learning mode = review + learn mode, add new card button
+
+#TODO conversation mode with NO SRS for NOW
+
+#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*
+
+#TODO counter for incorrect words before reviewing as incorrect
 #TODO conversation mode WITHOUT review panel and .10x srs weight
 #       Note: fsrs does NOT have a way to add weight to updates. Workaround needed or drop
 
@@ -161,13 +167,17 @@ def gen_feedback(identity):
     for i in incorrect:
         per_word[i] = (state, words) # save data to stream explanations later
 
+    # clean words for srs
+    clean_words = [clean_word(word) for word in words]
     #update srs based on feedback
-    correct, incorrect = get_correct_incorrect(words, incorrect)
-    srs_update(correct, incorrect, global_srs[identity])
+    srs_correct, srs_incorrect = get_correct_incorrect(clean_words, incorrect)
+    srs_update(srs_correct, srs_incorrect, global_srs[identity])
+    #get srs_due_words TODO
     # update_review_panel(global_srs[identity]) #TODO make this not show up in conversation mode
 
     feedback_msgs[identity].append(per_word)
 
+    
     return {
         'words': words,
         'word_feedbacks': incorrect,
@@ -199,8 +209,8 @@ def get_feedback(identity, idx):
 @app.route('/srs/review/<identity>/<word>')
 def srs_review_route_again(identity, word):
     srs = global_srs[identity]
-    print('reviewing in srs route. Word, "again":', word, ) #TODO clean up
-    srs.review_card(word, 'again') #TODO do we need to reassign global_srs['identity'] to the updated srs? 
+    print('reviewing in srs route. Word, "again":', word, )
+    srs.review_card(word, 'again') 
     return ''
 
 @socketio.on("identify")
@@ -324,7 +334,13 @@ def learning_convo(prompt, identity, learning_llm):
         print('CTX HISTORY:', ctx_msgs)
 
 def get_target_word(srs):
-    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0] #TODO better else statement  (this fails on empty srs)
+    target_word = ''
+    if len(srs.get_due_before_date(tomorrow)) != 0:
+        target_word = srs.get_due_before_date(tomorrow)[0] 
+    elif srs.num_words() != 0:
+        list(srs.get_words())[0]
+    else:
+        return '' #TODO take lp and generate a new word
     print('target word =', target_word) #TODO clean up
     return target_word
 
@@ -400,11 +416,13 @@ This method prepares the srs due words in a string format to be split on the
 javascript end (main.js)'''
 @app.route('/srs-due-before-tomorrow/<identity>')
 def update_review_panel(identity):
+    time.sleep(5)
     srs = global_srs[identity]
     words_due = srs.get_due_before_date(tomorrow)
     string_words_due = ''
     for word in words_due:
         string_words_due = string_words_due + word + ' '
+    print('returning srs due words string:', string_words_due)
     return string_words_due
 
 #TODO make this a call to the js side to the route above ^^^^^

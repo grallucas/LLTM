@@ -123,17 +123,8 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
         userInput.value = '';
 
-        // TODO this does work, just not in the right spot?
-        // update review pannel with due words (TODO make this not happen in conversation mode)
-        srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
-        // console.log('java srs review pannel string:');
-        // console.log(srs_due_str);
-        // toggleReviewWindow(srs_due_str);
-
-
         // await feedback then update 
         feedback.then(r => r.json()).then(data => {
-            let words = data['words'];
             const word_feedbacks = data['word_feedbacks'];
             const feedback_id = data['feedback_id']
 
@@ -147,7 +138,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             
             userMsg.innerHTML = words.join(' ');
         }).catch(e => console.log(e));;
-        
+        srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
     }else if(sendDisable){
         alert('Cannot send a message now')
     }
@@ -334,10 +325,9 @@ function toggleClickableWindow(word, feedback_id='') {
             }).catch(e => console.log(e));
 
             dropped_down = true;
+            
+            fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
         });
-
-        // TODO test SRS grade functionality
-        fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
     } else {
         clickableWindow.style.display = 'none';
     }
