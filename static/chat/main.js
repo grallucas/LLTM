@@ -29,7 +29,6 @@ const conv_btn = convMessageElement.querySelector('button');
 conv_btn.addEventListener('click', () => {
     sockets.emit("conversation-mode");
     convMessageElement.innerHTML += '<span class="spinner"></span>';
-    // document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
     document.getElementById('messages').removeChild(learnMessageElement)
 });
