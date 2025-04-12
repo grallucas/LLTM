@@ -10,15 +10,15 @@ def format_word_data(word_data):
 
     return word_data_fmted
 
-def translate_in_ctx(context, word, word_lexicon_data):
+def translate_in_ctx(context, word, word_lexicon_data, language):
     if word_lexicon_data:
         word_lexicon_data = format_word_data(word_lexicon_data)
 
-    llm = L.LLM('You are a Finnish -> English translator.')
+    llm = L.LLM(f'You are a {language} -> English translator.')
 
     translated_word = llm(
         f'{context}' +
-        f'\n\nGiven the prior context, translate the Finnish word "{word}" into english' + 
+        f'\n\nGiven the prior context, translate the {language} word "{word}" into english' + 
         (f' from one of these definitions:\n{word_lexicon_data}' if word_lexicon_data else '.') +
         '\nJust give me the json of the single english word (or phrase).'
         ,

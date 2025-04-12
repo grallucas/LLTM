@@ -42,7 +42,7 @@ feedback_msgs = {}
 global_srs = {} #{identity : srs}
 global_language_progress = {} #{identity : language_progress}
 global_mode = {} #{identity : mode} (modes are 'conversing' or 'learning')
-session_language = 'Finnish'
+session_language = 'Italian'
 
 # Path settings
 USER = getpass.getuser()
@@ -121,7 +121,7 @@ def translate_word(identity, word):
     if word not in lexicon_words:
         lexicon_words[word] = lexicon.lookup_word(word, session_language)
 
-    translated_word, explanation, breakdown = translate.translate_in_ctx(ctx_msgs[identity], word, lexicon_words[word])
+    translated_word, explanation, breakdown = translate.translate_in_ctx(ctx_msgs[identity], word, lexicon_words[word], session_language)
 
     return {
         'translated': translated_word,
@@ -159,7 +159,7 @@ def gen_feedback(identity):
 
     feedback_msgs_idx = feedback_msgs[identity].__len__()
 
-    words, incorrect, state = feedback.grade_per_word(prompt)
+    words, incorrect, state = feedback.grade_per_word(prompt, session_language)
     per_word = {}
     for i in incorrect:
         per_word[i] = (state, words) # save data to stream explanations later
@@ -222,7 +222,7 @@ def identify(identity):
 def chat_interface(prompt):
     if global_mode[session['identity']] == 'conversing':
         if 'chat' not in session:
-            session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
+            session['chat'] = chat.make_chat_llm(language_progress.intro_words, session_language)
         llm = session['chat']
         s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
         msg = ''
@@ -258,6 +258,7 @@ def initialize(identity):
         global_language_progress[identity] = lp
         srs = SRS.SRS()
         global_srs[identity] = srs
+        add_words(5, srs, lp)
         
 def add_words(num_words : int, srs : SRS.SRS, lp : language_progress.language_progress) -> None:
     for i in range(num_words):
@@ -277,7 +278,7 @@ def review_mode():
     global_mode[session['identity']] = 'learning' 
     initialize(session['identity'])
     if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()))
+        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()), session_language)
     # update review screen with new due words
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm']) 

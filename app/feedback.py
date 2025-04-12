@@ -9,8 +9,8 @@ def _highlight_word(idx, words):
     highlighted = ' '.join(highlighted)
     return highlighted
 
-def grade_per_word(sentence):
-    llm = L.LLM('You are a Finnish language teacher.')
+def grade_per_word(sentence, language):
+    llm = L.LLM(f'You are a {language} language teacher.')
 
     cot = llm(
         'Is there a clear mistake in this sentence? Give (English) feedback for this sentence.\n\n' +
