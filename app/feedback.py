@@ -42,7 +42,7 @@ def grade_per_word(sentence):
         sentence_w_highlight = _highlight_word(i, words)
         
         applies = llm(
-            f'Does your feedback affect the highlighted word?\n\n{sentence_w_highlight}',
+            f'Does your feedback affect the highlighted word? Remember to use proper JSON formatting.\n\n{sentence_w_highlight}',
             response_format=['y/n']
         )['y/n']
 

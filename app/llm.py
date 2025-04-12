@@ -136,10 +136,25 @@ class LLM:
         out_toks = _ntoks(out)
         _inc_tok_count('out', out_toks)
         
+        print('out:', out)
         try:
+            if 'y/n' in response_format:
+                if not 'y/n' in out:
+                    if 'y' in out:
+                        out = {'y/n':'y'}
+                    elif 'n' in out:
+                        out = {'y/n':'n'}
+                else:
+                    good_json = '{"y/n":"'
+                    out_formatted = str(out.replace(' ', ''))
+                    if not out_formatted.startswith(good_json):
+                        char = out_formatted[len(good_json) - 1]
+                        out = '{"y/n":"' + char + '\"}'
             out = json.loads(out)
         except:
-            raise Exception(f'Bad JSON output. {out} != {response_format}')
+            # raise Exception(f'Bad JSON output. {out} != {response_format}')
+            print(f'Bad JSON output. {out} != {response_format}')
+            out = {"y/n":"n"}
 
         if not all(k in out.keys() for k in response_format):
             raise Exception(f'Missing json keys. {out.keys()} != {response_format}')

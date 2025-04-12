@@ -5,6 +5,9 @@ from pathlib import Path
 from flask import Flask, render_template, request, send_from_directory, Response, session
 from flask_socketio import SocketIO, emit
 import time
+import os
+import json
+import string
 
 import llm as L
 from models import generate_img, generate_tts
@@ -14,6 +17,7 @@ import feedback
 import chat
 import leveled_learning
 import conversation_learning
+import language_progress
 
 import SRS
 import datetime
@@ -31,17 +35,34 @@ tts_words = {}
 img_words = {}
 lexicon_words = {}
 
-# cached in memory
+# Global Variables (cached in memory)
 tts_msgs = {}
 ctx_msgs = {}
 feedback_msgs = {}
 global_srs = {} #{identity : srs}
+global_language_progress = {} #{identity : language_progress}
+global_mode = {} #{identity : mode} (modes are strings, 'conversation' or 'review' or 'learn')
+session_language = 'Finnish'
 
-#TODO learn mode with new words on initialization 
-#TODO Duolingo beginner words
+# Path settings
+USER = getpass.getuser()
+save_path = './ColloquyLanguageLearning/saves'
+home_path = '/home'
+save_path = os.path.join(home_path, USER, save_path)
 
+#TODO:
+    #check srs updates
+        #spam same word -> other words don't get removed
+        #words should be removed after correct enough
+        #try marking all as incorrect and make sure they DONT go away
+
+#TODO learning mode = review + learn mode, add new card button
+
+#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*
+
+#TODO counter for incorrect words before reviewing as incorrect
 #TODO conversation mode WITHOUT review panel and .10x srs weight
-#       Note: fsrs does NOT have a way to add weight to updates. Workaround needed
+#       Note: fsrs does NOT have a way to add weight to updates. Workaround needed or drop
 
 tomorrow = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1) #datetime.now is not timezone aware
 
@@ -51,7 +72,7 @@ def clean_word(s):
 @app.route('/')
 def main():
     print(session)
-    return "http://localhost:8001/static/chat/index.html"
+    return "http://localhost:8002/static/chat/index.html"
 
 @app.route('/api/stats/<language>')
 def stats_api(language):
@@ -82,7 +103,7 @@ def get_tts_word(word):
 def get_word_info(word):
     word = clean_word(word)
     if word not in lexicon_words:
-        lexicon_words[word] = lexicon.lookup_word(word, 'Finnish')
+        lexicon_words[word] = lexicon.lookup_word(word, session_language)
 
     return lexicon_words[word]
 
@@ -98,7 +119,7 @@ def translate_word(identity, word):
     word = clean_word(word)
 
     if word not in lexicon_words:
-        lexicon_words[word] = lexicon.lookup_word(word, 'Finnish')
+        lexicon_words[word] = lexicon.lookup_word(word, session_language)
 
     translated_word, explanation, breakdown = translate.translate_in_ctx(ctx_msgs[identity], word, lexicon_words[word])
 
@@ -114,7 +135,7 @@ def get_img_word(word):
     if word not in img_words:
         print('generating img for', word)
         l = L.LLM('You are a picture describer who describes pictures that help language learners remember vocabulary.')
-        l(f'Concisely Translate this Finnish word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
+        l(f'Concisely Translate this {session_language} word into English: "{word}"') # TODO: in-ctx translate (or most common meaning, or avg all meanings)
         l(
             'What might be a good simple picture to help me remember this word? '
             'Absolutely DO NOT include text/writing/symbols of any sort. Do not include hands. '
@@ -144,11 +165,14 @@ def gen_feedback(identity):
         per_word[i] = (state, words) # save data to stream explanations later
 
     #update srs based on feedback
-    correct, incorrect = get_correct_incorrect(words, incorrect)
-    srs_update(correct, incorrect, global_srs[identity])
+    clean_words = [clean_word(word) for word in words]
+    srs_correct, srs_incorrect = get_correct_incorrect(clean_words, incorrect)
+    if global_mode[identity] == 'review' or global_mode[identity] == 'learn':
+        srs_update(srs_correct, srs_incorrect, global_srs[identity])
 
     feedback_msgs[identity].append(per_word)
 
+    
     return {
         'words': words,
         'word_feedbacks': incorrect,
@@ -180,8 +204,15 @@ def get_feedback(identity, idx):
 @app.route('/srs/review/<identity>/<word>')
 def srs_review_route_again(identity, word):
     srs = global_srs[identity]
-    print('reviewing in srs route. Word, "again":', word, ) #TODO clean up
-    srs.review(word, 'again')
+    word = clean_word(word)
+    print('reviewing in srs route. Word, "again":', word, )
+    srs.review_card(word, 'again') 
+    return ''
+
+@app.route('/addwords/<identity>')
+def route_add_words(identity):
+    add_words(5, global_srs[identity], global_language_progress[identity])
+    return ''
 
 @socketio.on("identify")
 def identify(identity):
@@ -189,7 +220,7 @@ def identify(identity):
 
 @socketio.on("chat-interface")
 def chat_interface(prompt):
-    if session['level'] == 'conversation':
+    if global_mode[session['identity']] == 'conversation':
         if 'chat' not in session:
             session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
         llm = session['chat']
@@ -204,49 +235,65 @@ def chat_interface(prompt):
         emit("chat-interface", '<TTS>')
         
         ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
-    if session['level'] == 'review':
-        print('before prompt')
-        learning_convo(prompt)
-        print('after prompt')
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
-        # update review screen with new due words
-        update_review_panel(global_srs[session['identity']])
-    if session['level'] == 'learn':
-        learning_convo(prompt)
-        update_review_panel(global_srs[session['identity']])
-        # srs_update(srs_correct_incorrect['correct'], srs_correct_incorrect['incorrect']) #TODO clean up
+    if global_mode[session['identity']] == 'review':
+        learning_convo(prompt, session['identity'], session['learning-llm'])
+    if global_mode[session['identity']] == 'learn':
+        learning_convo(prompt, session['identity'], session['learning-llm'])
     
 
-def initialize(identity, level='conversation'):
-    if 'level' not in session:
-        session['level'] = level #TODO global level of identidies
-    if identify not in global_srs:
+def initialize(identity):
+    PATH = save_path
+    if os.path.exists(PATH):
+        # reload saved srs and language progress
+        srs_path = os.path.join(PATH, 'srs.json')
+        with open(srs_path, 'r') as file:
+            srs_json_string = json.load(file)
+            srs = SRS.SRS()
+            srs.deserialize(srs_json_string)
+            global_srs[identity] = srs
+        language_progress_path = os.path.join(PATH, 'language_progress.json')
+        with open(language_progress_path, 'r') as file:
+            language_progress_json_string = json.load(file)
+            lp = language_progress.language_progress([], session_language)
+            global_language_progress[identity] = lp
+    else:
+        lp = language_progress.language_progress(language_progress.intro_words, session_language)
+        global_language_progress[identity] = lp
         srs = SRS.SRS()
-        srs.add_card('koira')
-        srs.add_card('velho')
-        srs.add_card('uusi')
-        srs.add_card('vanha')
-        srs.add_card('sinulla')
-        global_srs[identity] = srs #TODO updated correctly?
-
+        global_srs[identity] = srs
+        
+def add_words(num_words : int, srs : SRS.SRS, lp : language_progress.language_progress) -> None:
+    for i in range(num_words):
+        word = lp.get_new_word()
+        word = clean_word(word)
+        print('adding word:', word)
+        srs.add_card(word)
 
 @socketio.on('conversation-mode')
 def conversation_mode():
-    initialize('conversation', session['identity'])
+    global_mode[session['identity']] = 'conversation' 
+    initialize(session['identity'])
     chat_interface('You start. Keep this interactive by asking ME questions.')
 
 @socketio.on('review-mode')
 def review_mode():
-    initialize('review', session['identity'])
+    global_mode[session['identity']] = 'review' 
+    initialize(session['identity'])
+    if 'learning-llm' not in session:
+        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()))
     # update review screen with new due words
-    update_review_panel(session['srs'])
-    learning_convo('You start. Keep this interactive by asking ME questions.')
+    update_review_panel(global_srs[session['identity']])
+    learning_convo('', session['identity'], session['learning-llm']) 
 
 @socketio.on('learn-mode')
 def learn_mode():
-    initialize('learn', session['identity'])
-    learning_convo('You start. Keep this interactive by asking ME questions.')
+    global_mode[session['identity']] = 'learn'
+    initialize(session['identity'])
+    if 'learning-llm' not in session:
+        session['learning-llm'] = conversation_learning.learning_llm()
+    add_words(5, global_srs[session['identity']], global_language_progress[session['identity']])
+    update_review_panel(global_srs[session['identity']])
+    learning_convo('', session['identity'], session['learning-llm'])
 
 
 def level1(prompt):
@@ -266,116 +313,52 @@ def level1(prompt):
 
     ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
 
-def jeopardy(prompt):
-    if 'learning-llm' not in session:
-        session['learning-llm'] = leveled_learning.learning_llm(leveled_learning.get_vocab_qs())
-            
-    learn = session['learning-llm']
-
-    if 's' not in session:
-        session['s'] = ''
-        session['q'] = ''
-        session['a'] = ''
-    else:
-        # evaluate PRIOR answer if it exists
-        s_string = session['s']
-        q_string = session['q']
-        a = session['a']
-        e = learn.evaluate(s_string, q_string, a, prompt)
-        emit("chat-interface", '<START>')
-        for tok in e:
-            emit("chat-interface", tok)
-        emit("chat-interface", '<END>')
-        emit("chat-interface", '<NO-TTS>')
-        print("Answer correct:", learn.grade())
-
-    # reset strings
-    s_string = ''
-    q_string = ''
-    # target word selection 
-    # target_word = getTargetWord(session['']) TODO: get from SRS
-    target_word = 'koira'
-    # sentence
-    s, sentence = learn.get_sentence(target_word)
-    emit("chat-interface", '<START>')
-    for tok in sentence:
-        emit("chat-interface", tok)
-        s_string += tok
-    emit("chat-interface", "\n\n")
-    print('s_string:', s_string)
-    # question
-    q = learn.get_question(target_word, s, s_string)
-    for tok in q:
-        emit("chat-interface", tok)
-        q_string += tok
-    emit("chat-interface", '<END>')
-
-    tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
-    emit("chat-interface", '<TTS>')
-
-    ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
-
-    print('q_string:', q_string)
-    a = learn.get_answer(target_word)
-    print('answer:', a)
-    # save session variables
-    session['s'] = s_string
-    session['q'] = q_string
-    session['a'] = a
-
-def learning_convo(prompt):
-    #initialize
-    if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm()
-        convo_introduction()
-    if 'wait' not in session:
-        session['wait'] = 2
+def learning_convo(prompt, identity, learning_llm):
+    if prompt == '':
+        # convo_introduction() TODO let's do something better than a big text wall
         # llm starts with question
-        target_word = get_target_word(session['srs'])
-        q_string = learning_convo_question(target_word)
-        tts_msgs[session['identity']] = generate_tts(q_string, TTS_URL)
+        target_word = get_target_word(global_srs[identity])
+        q_string = learning_convo_question(target_word, learning_llm)
+        ctx_msgs[identity] = f'A:\n{prompt}\n\nB:{q_string}'
+        tts_msgs[identity] = generate_tts(q_string, TTS_URL)
         emit("chat-interface", '<TTS>')
-
-    # Converse on turn (wait for 2 messages before sending)
-    if session['wait'] > 1:
-        session['wait'] = session['wait'] - 1
     else:
         # respond to question
-        s_string = learning_convo_sentence(prompt)
-        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
+        s_string = learning_convo_sentence(prompt, learning_llm)
+        ctx_msgs[identity] = f'A:\n{prompt}\n\nB:{s_string}'
         # send question
-        target_word = get_target_word(session['srs'])
-        q_string = learning_convo_question(target_word)
-        ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
-        tts_msgs[session['identity']] = generate_tts(s_string + '\n \n \n' + q_string, TTS_URL)
+        target_word = get_target_word(global_srs[identity])
+        q_string = learning_convo_question(target_word, learning_llm)
+        ctx_msgs[identity] = f'A:\n{prompt}\n\nB:{s_string}'
+        tts_msgs[identity] = generate_tts(s_string + '\n \n \n' + q_string, TTS_URL)
         emit("chat-interface", '<TTS>')
-        session['wait'] = 2
         print('CTX HISTORY:', ctx_msgs)
 
 def get_target_word(srs):
-    print('due before tomorrow words:', srs.get_due_before_date(tomorrow)) #TODO clean up
-    target_word = srs.get_due_before_date(tomorrow)[0] if len(srs.get_due_before_date(tomorrow)) != 0 else list(srs.get_words())[0] #TODO better else statement 
+    target_word = ''
+    if len(srs.get_due_before_date(tomorrow)) != 0:
+        target_word = srs.get_due_before_date(tomorrow)[0] 
+    elif srs.num_words() != 0:
+        list(srs.get_words())[0]
+    else:
+        return '' #TODO take lp and generate a new word
     print('target word =', target_word) #TODO clean up
     return target_word
 
-def learning_convo_sentence(prompt):
-    s = session['learning-llm'].get_sentence(prompt)
+def learning_convo_sentence(prompt, learning_llm):
+    s = learning_llm.get_sentence(prompt)
     s_string = ''
     emit("chat-interface", '<START>')
     for tok in s:
         emit("chat-interface", tok)
         s_string += tok
     emit("chat-interface", '<END>')
+    emit("chat-interface", "<NO-TTS>")
     print('s_string:', s_string)
     return s_string
 
-    tts_msgs[session['identity']] = generate_tts(s_string, TTS_URL)
-    emit("chat-interface", '<TTS>')
-
-    ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{s_string}'
-
-def learning_convo_question(target_word):
-    q = session['learning-llm'].get_question(target_word)
+def learning_convo_question(target_word, learning_llm):
+    q = learning_llm.get_question(target_word)
     q_string = ''
     emit("chat-interface", '<START>')
     for tok in q:
@@ -384,9 +367,6 @@ def learning_convo_question(target_word):
     emit("chat-interface", '<END>')
     print('q_string:', q_string)
     return q_string
-
-    tts_msgs[session['identity']] = generate_tts(q_string, TTS_URL)
-    emit("chat-interface", '<TTS>')
 
 def convo_introduction():
     intro = ("Welcome to the review mode! Here you will respond to questions and write your own "
@@ -410,10 +390,8 @@ def srs_update(correct : list, incorrect : list, srs) -> None:
     print('srs_update correct:', correct)
     print('srs_update incorrect:', incorrect)
     for word in incorrect:
-        print('grading incorrect word:', word) #TODO clean up
         srs.review_card(word, 'again')
     for word in correct:
-        print('grading correct word:', word) #TODO clean up
         srs.review_card(word, 'good')
     print('srs due words after srs_update:', srs.get_due_before_date(tomorrow)) #TODO clean up
 
@@ -437,13 +415,44 @@ def get_correct_incorrect(words, incorrect_indices):
 '''
 This method prepares the srs due words in a string format to be split on the
 javascript end (main.js)'''
+@app.route('/srs-due-before-tomorrow/<identity>')
+def update_review_panel(identity):
+    string_words_due = ''
+    if global_mode[identity] != 'conversation':
+        srs = global_srs[identity]
+        words_due = srs.get_due_before_date(tomorrow)
+        for word in words_due:
+            string_words_due = string_words_due + word + ' '
+        print('returning srs due words string:', string_words_due)
+    return string_words_due
+
+#TODO make this a call to the js side to the route above ^^^^^
 def update_review_panel(srs):
     words_due = srs.get_due_before_date(tomorrow)
     string_words_due = ''
     for word in words_due:
         string_words_due = string_words_due + word + ' '
-    print('string_words_due sent to main.js:', string_words_due) #TODO: clean up
     emit('srs-update', string_words_due)
+
+# @app.route('/save-on-disconnect/<identity>')
+@socketio.on('disconnect')
+def save_on_disconnect():
+    identity = session['identity']
+    srs_serialized = global_srs[identity].serialize()
+    print(srs_serialized)
+    language_progress_serialized = global_language_progress[identity].serialize()
+    print(language_progress_serialized)
+    PATH = save_path
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
+    srs_file_path = os.path.join(PATH, 'srs.json')
+    with open(srs_file_path, "w") as file:
+        json.dump(srs_serialized, file, indent=4)
+    language_progress_path = os.path.join(PATH, 'language_progress.json')
+    with open(language_progress_path, "w") as file:
+        json.dump(language_progress_serialized, file, indent=4)
+    print('save complete')
+    return ''
 
 
 print(f"Run this on your local machine in WSL or Git Bash:")

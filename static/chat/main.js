@@ -1,4 +1,4 @@
-const socketHost = "http://localhost:8001";
+const socketHost = "http://localhost:8002";
 
 const identity = "example.identity";
 var sockets;
@@ -29,7 +29,6 @@ const conv_btn = convMessageElement.querySelector('button');
 conv_btn.addEventListener('click', () => {
     sockets.emit("conversation-mode");
     convMessageElement.innerHTML += '<span class="spinner"></span>';
-    document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
     document.getElementById('messages').removeChild(learnMessageElement)
 });
@@ -42,7 +41,7 @@ document.getElementById('messages').appendChild(revMessageElement);
 
 const rev_btn = revMessageElement.querySelector('button');
 rev_btn.addEventListener('click', () => {
-    sockets.emit("review-mode"); // TODO update
+    sockets.emit("review-mode");
     revMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
@@ -57,7 +56,7 @@ document.getElementById('messages').appendChild(learnMessageElement);
 
 const learn_btn = learnMessageElement.querySelector('button');
 learn_btn.addEventListener('click', () => {
-    sockets.emit("learn-mode"); // TODO update
+    sockets.emit("learn-mode");
     learnMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
@@ -96,6 +95,7 @@ $('document').ready(()=>{
         }
     });
     sockets.on('disconnect', ()=>{
+        // fetch(`/save-on-disconnect/${identity}`).catch(e => console.log(e));
         confirm("Server disconnected")
         window.location.reload()
     });
@@ -124,7 +124,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
 
         // await feedback then update 
         feedback.then(r => r.json()).then(data => {
-            let words = data['words'];
+            const words = data['words']
             const word_feedbacks = data['word_feedbacks'];
             const feedback_id = data['feedback_id']
 
@@ -137,6 +137,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             });
             
             userMsg.innerHTML = words.join(' ');
+            fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
         }).catch(e => console.log(e));;
     }else if(sendDisable){
         alert('Cannot send a message now')
@@ -186,19 +187,38 @@ function toggleReviewWindow(words) {
     //     window.style.display = 'none'
     //     return
     // }
+    if (words.length == 0) {
+        window.style.display = 'none'
+    } else {
+        window.replaceChildren()
+        window.style.display = ''
+        const newWordElement = document.createElement('div');
+        newWordElement.innerHTML = '<button><b>Click</b> to add new words</button>';
+        const newWordButton = newWordElement.querySelector('button');
+        newWordButton.addEventListener('click', () => {
+            fetch(`/addwords/${identity}`);
+            // update review screen
+            srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
+        });
+        document.getElementById('review-window').appendChild(newWordElement)
+        
+        const msgPara = document.createElement('p');
+        msgPara.textContent = 'Use or look up each word to check it off!';
+        window.appendChild(msgPara);
 
-    // Enable
+        const hr = document.createElement('hr');
+        hr.classList.add('thick-line');
+        window.appendChild(hr);
 
-    window.style.display = '';
-    window.innerHTML = `
-        <h1 class="center">Review</h1>
-        <p>Use or look up each word to check it off!</p>
-        <hr class="thick-line">
-    `;
-    split_words = words.split(" ")
-    split_words.forEach(w => {
-        window.innerHTML += `<p class="word" onclick="toggleClickableWindow('${w}')">${w}</p>`;
-    });
+        const split_words = words.split(" ");
+        split_words.forEach(w => {
+            const p = document.createElement('p');
+            p.className = 'word';
+            p.textContent = w;
+            p.onclick = () => toggleClickableWindow(w);
+            window.appendChild(p);
+        });
+    }
 }
 
 // --- WORD WINDOW ---
@@ -323,10 +343,9 @@ function toggleClickableWindow(word, feedback_id='') {
             }).catch(e => console.log(e));
 
             dropped_down = true;
+            
+            fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
         });
-
-        // TODO test SRS grade functionality
-        fetch(`/srs/review/${identity}/${word}`).catch(e => console.log(e));
     } else {
         clickableWindow.style.display = 'none';
     }
