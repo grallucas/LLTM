@@ -18,14 +18,14 @@ Pattern:
 """
 
 class learning_llm:
-    def __init__(self, language='Finnish'):
+    def __init__(self, vocab, language='Finnish'):
         self.language = language
         self.sentence_llm = L.LLM("You are a helpfull assistant. "
                                   f"You respond using simple sentences in {language}")
-        self.question_llm = L.LLM("You are a helpful assistant. "
-                                    f"You ask questions in {language} so that the user "
-                                    "can respond with with a given target word. "
-                                    "The target word will be given as each prompt.")
+        self.question_llm = L.LLM(f'You are a Finnish language teacher named Rossi. '
+        '\nUse lots of emojis. All of your responses must be grammatically correct Finnish.'
+        f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.')
+
         self.translate_llm = L.LLM(f"You are a helpful assistant. You translate {language} words into English.")
         self.eval_llm = L.LLM("You are a helpful assistant. "
                  f"You are given questions and answers to sentences in {language} and determine if they are correct."

@@ -1,4 +1,4 @@
-const socketHost = "http://localhost:8001";
+const socketHost = "http://localhost:8002";
 
 const identity = "example.identity";
 var sockets;
@@ -137,8 +137,8 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             });
             
             userMsg.innerHTML = words.join(' ');
+            fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
         }).catch(e => console.log(e));;
-        srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
     }else if(sendDisable){
         alert('Cannot send a message now')
     }

@@ -56,8 +56,6 @@ save_path = os.path.join(home_path, USER, save_path)
         #words should be removed after correct enough
         #try marking all as incorrect and make sure they DONT go away
 
-#TODO catch the response format fail 
-
 #TODO learning mode = review + learn mode, add new card button
 
 #*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*
@@ -74,7 +72,7 @@ def clean_word(s):
 @app.route('/')
 def main():
     print(session)
-    return "http://localhost:8001/static/chat/index.html"
+    return "http://localhost:8002/static/chat/index.html"
 
 @app.route('/api/stats/<language>')
 def stats_api(language):
@@ -206,6 +204,7 @@ def get_feedback(identity, idx):
 @app.route('/srs/review/<identity>/<word>')
 def srs_review_route_again(identity, word):
     srs = global_srs[identity]
+    word = clean_word(word)
     print('reviewing in srs route. Word, "again":', word, )
     srs.review_card(word, 'again') 
     return ''
@@ -281,7 +280,7 @@ def review_mode():
     global_mode[session['identity']] = 'review' 
     initialize(session['identity'])
     if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm()
+        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()))
     # update review screen with new due words
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm']) 
@@ -420,7 +419,6 @@ javascript end (main.js)'''
 def update_review_panel(identity):
     string_words_due = ''
     if global_mode[identity] != 'conversation':
-        time.sleep(5) #TODO better solution than this
         srs = global_srs[identity]
         words_due = srs.get_due_before_date(tomorrow)
         for word in words_due:

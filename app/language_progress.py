@@ -51,7 +51,7 @@ class language_progress():
 
 
 # Taken from: https://duome.eu/vocabulary/en/fi/skills
-intro_words = [
+intro_words = [ #TODO This should be much longer (~100)
     #basics_1
     'aina',
     'hän',
