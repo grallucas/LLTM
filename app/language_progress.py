@@ -17,7 +17,8 @@ class language_progress():
     def get_new_word(self) -> str:
         if (len(self.intro_words) != 0):
             #remove from list and return
-            index = random.randint(0, len(self.intro_words) - 1)
+            # index = random.randint(0, len(self.intro_words) - 1)
+            index = 0 #grab from top
             word = self.intro_words[index]
             self.intro_words.remove(word)
             self.known_words.append(word)
