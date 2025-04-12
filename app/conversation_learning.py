@@ -32,7 +32,7 @@ class learning_llm:
                  "Speak directly to the user.")
     
     def get_sentence(self, prompt):
-        s = self.sentence_llm(
+        s = self.question_llm(
             f"Respond to the prompt \"{prompt}\" in an engaging way.",
             response_format='stream',
             max_tokens=None,
