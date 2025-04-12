@@ -72,7 +72,7 @@ def clean_word(s):
 @app.route('/')
 def main():
     print(session)
-    return "http://localhost:8002/static/chat/index.html"
+    return f"http://localhost:{PORT}/static/chat/index.html"
 
 @app.route('/api/stats/<language>')
 def stats_api(language):
@@ -285,12 +285,14 @@ def review_mode():
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm']) 
 
+
+# TODO: destroy...
 @socketio.on('learn-mode')
 def learn_mode():
     global_mode[session['identity']] = 'learn'
     initialize(session['identity'])
     if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm()
+        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()))
     add_words(5, global_srs[session['identity']], global_language_progress[session['identity']])
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm'])
