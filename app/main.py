@@ -41,7 +41,7 @@ ctx_msgs = {}
 feedback_msgs = {}
 global_srs = {} #{identity : srs}
 global_language_progress = {} #{identity : language_progress}
-global_mode = {} #{identity : mode} (modes are strings, 'conversation' or 'review' or 'learn')
+global_mode = {} #{identity : mode} (modes are 'conversing' or 'learning')
 session_language = 'Finnish'
 
 # Path settings
@@ -72,7 +72,7 @@ def clean_word(s):
 @app.route('/')
 def main():
     print(session)
-    return "http://localhost:8002/static/chat/index.html"
+    return f"http://localhost:{PORT}/static/chat/index.html"
 
 @app.route('/api/stats/<language>')
 def stats_api(language):
@@ -167,7 +167,7 @@ def gen_feedback(identity):
     #update srs based on feedback
     clean_words = [clean_word(word) for word in words]
     srs_correct, srs_incorrect = get_correct_incorrect(clean_words, incorrect)
-    if global_mode[identity] == 'review' or global_mode[identity] == 'learn':
+    if global_mode[identity] == 'learning':
         srs_update(srs_correct, srs_incorrect, global_srs[identity])
 
     feedback_msgs[identity].append(per_word)
@@ -220,7 +220,7 @@ def identify(identity):
 
 @socketio.on("chat-interface")
 def chat_interface(prompt):
-    if global_mode[session['identity']] == 'conversation':
+    if global_mode[session['identity']] == 'conversing':
         if 'chat' not in session:
             session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
         llm = session['chat']
@@ -235,11 +235,8 @@ def chat_interface(prompt):
         emit("chat-interface", '<TTS>')
         
         ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
-    if global_mode[session['identity']] == 'review':
+    if global_mode[session['identity']] == 'learning':
         learning_convo(prompt, session['identity'], session['learning-llm'])
-    if global_mode[session['identity']] == 'learn':
-        learning_convo(prompt, session['identity'], session['learning-llm'])
-    
 
 def initialize(identity):
     PATH = save_path
@@ -271,47 +268,19 @@ def add_words(num_words : int, srs : SRS.SRS, lp : language_progress.language_pr
 
 @socketio.on('conversation-mode')
 def conversation_mode():
-    global_mode[session['identity']] = 'conversation' 
+    global_mode[session['identity']] = 'conversing' 
     initialize(session['identity'])
     chat_interface('You start. Keep this interactive by asking ME questions.')
 
-@socketio.on('review-mode')
+@socketio.on('learn-mode')
 def review_mode():
-    global_mode[session['identity']] = 'review' 
+    global_mode[session['identity']] = 'learning' 
     initialize(session['identity'])
     if 'learning-llm' not in session:
         session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()))
     # update review screen with new due words
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm']) 
-
-@socketio.on('learn-mode')
-def learn_mode():
-    global_mode[session['identity']] = 'learn'
-    initialize(session['identity'])
-    if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm()
-    add_words(5, global_srs[session['identity']], global_language_progress[session['identity']])
-    update_review_panel(global_srs[session['identity']])
-    learning_convo('', session['identity'], session['learning-llm'])
-
-
-def level1(prompt):
-    if 'chat' not in session:
-        session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
-    llm = session['chat']
-
-    s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
-    msg = ''
-    emit("chat-interface", '<START>')
-    for tok in s:
-        emit("chat-interface", tok)
-        msg += tok
-    emit("chat-interface", '<END>')
-    tts_msgs[session['identity']] = generate_tts(msg, TTS_URL)
-    emit("chat-interface", '<TTS>')
-
-    ctx_msgs[session['identity']] = f'A:\n{prompt}\n\nB:{msg}'
 
 def learning_convo(prompt, identity, learning_llm):
     if prompt == '':
@@ -418,7 +387,7 @@ javascript end (main.js)'''
 @app.route('/srs-due-before-tomorrow/<identity>')
 def update_review_panel(identity):
     string_words_due = ''
-    if global_mode[identity] != 'conversation':
+    if global_mode[identity] != 'conversing':
         srs = global_srs[identity]
         words_due = srs.get_due_before_date(tomorrow)
         for word in words_due:

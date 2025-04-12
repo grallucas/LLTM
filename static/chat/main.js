@@ -1,4 +1,4 @@
-const socketHost = "http://localhost:8002";
+const socketHost = "http://localhost:8001";
 
 const identity = "example.identity";
 var sockets;
@@ -20,7 +20,7 @@ function format_msg(text) {
 // --- INIT ---
 
 const convMessageElement = document.createElement('div');
-convMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversation!</button>';
+convMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversing!</button>';
 convMessageElement.classList.add('bot-message');
 convMessageElement.classList.add('message');
 document.getElementById('messages').appendChild(convMessageElement);
@@ -30,37 +30,20 @@ conv_btn.addEventListener('click', () => {
     sockets.emit("conversation-mode");
     convMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(revMessageElement)
-    document.getElementById('messages').removeChild(learnMessageElement)
 });
 
 const revMessageElement = document.createElement('div');
-revMessageElement.innerHTML = '<button><b>Click</b> to Start the Review!</button>';
+revMessageElement.innerHTML = '<button><b>Click</b> to Start the Learning!</button>';
 revMessageElement.classList.add('bot-message');
 revMessageElement.classList.add('message');
 document.getElementById('messages').appendChild(revMessageElement);
 
 const rev_btn = revMessageElement.querySelector('button');
 rev_btn.addEventListener('click', () => {
-    sockets.emit("review-mode");
+    sockets.emit("learn-mode");
     revMessageElement.innerHTML += '<span class="spinner"></span>';
     document.getElementById('messages').removeChild(convMessageElement)
     document.getElementById('messages').removeChild(revMessageElement)
-    document.getElementById('messages').removeChild(learnMessageElement)
-});
-
-const learnMessageElement = document.createElement('div');
-learnMessageElement.innerHTML = '<button><b>Click</b> to Start the Learning!</button>';
-learnMessageElement.classList.add('bot-message');
-learnMessageElement.classList.add('message');
-document.getElementById('messages').appendChild(learnMessageElement);
-
-const learn_btn = learnMessageElement.querySelector('button');
-learn_btn.addEventListener('click', () => {
-    sockets.emit("learn-mode");
-    learnMessageElement.innerHTML += '<span class="spinner"></span>';
-    document.getElementById('messages').removeChild(convMessageElement)
-    document.getElementById('messages').removeChild(revMessageElement)
-    document.getElementById('messages').removeChild(learnMessageElement)
 });
 
 // --- SOCKET READING ---
