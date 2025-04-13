@@ -41,7 +41,7 @@ class learning_llm:
     def __init__(self, vocab, language='Finnish'):
         self.language = language
         self.vocab = vocab
-        self.sentence_llm = L.LLM("You are a helpful assistant. You take a given sentence "
+        self.sentence_llm = L.LLM(f"You are a helpful assistant. You take a given {language} sentence "
                      f"with a target word and make a similar variation of it. Keep the target word the same.")
         self.question_llm = L.LLM("You are a helpful assistant. You will be given a sentence and question pair for "
                      f"a target vocab word in {language}. A varation of the sentence will be given to you; your goal "
@@ -65,7 +65,7 @@ class learning_llm:
                 max_tokens=None,
                 temperature=0.1,
                 # verbose=False
-                )
+            )
             return (s, s_variation)
         else:
             print("Error: target word not found for sentence creation.")
@@ -83,7 +83,7 @@ class learning_llm:
                 max_tokens=None,
                 temperature=0.1,
                 # verbose=False
-                )
+            )
             return q_variation
         else:
             print("Error: target word not found for question creation.")

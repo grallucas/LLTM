@@ -26,7 +26,7 @@ app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
 ROOT = Path.cwd().as_posix()
-TTS_URL, IMG_GEN_URL = sys.argv[-1].split(',')
+TTS_URL, IMG_GEN_URL, MASKED_LLM_URL = sys.argv[-1].split(',')
 PORT = sys.argv[-2]
 L.TOKEN_COUNT_PATH = '/data/ai_club/team_3_2024-25/tokcounts2/'
 
@@ -218,18 +218,26 @@ def route_add_words(identity):
 def identify(identity):
     session['identity'] = identity
 
+@socketio.on('set-llm-mode')
+def set_llm_mode(mode):
+    session['llm-mode'] = mode
+
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if global_mode[session['identity']] == 'conversing':
         if 'chat' not in session:
             session['chat'] = chat.make_chat_llm(chat.allowed_vocab)
         llm = session['chat']
-        s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
+        if session['llm-mode'] == 'unmasked':
+            s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
+        if session['llm-mode'] == 'masked':
+            s = llm(prompt, response_format='stream_masked', stream_mask_info=(chat.allowed_vocab, MASKED_LLM_URL))
         msg = ''
         emit("chat-interface", '<START>')
         for tok in s:
             emit("chat-interface", tok)
             msg += tok
+
         emit("chat-interface", '<END>')
         tts_msgs[session['identity']] = generate_tts(msg, TTS_URL)
         emit("chat-interface", '<TTS>')

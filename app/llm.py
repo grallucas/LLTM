@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from copy import deepcopy
 import threading
+import models
 
 USER = getpass.getuser()
 
@@ -123,6 +124,31 @@ class LLM:
             self._awaiting_streamed = False
 
         return tok_stream()
+        
+    def _call_stream_masked(self, prompt, vocab, host):        
+        # make sure msg format is good for masking model
+        assert self._hist[0].role == 'system'
+        for i, m in enumerate(self._hist[1:]):
+            if i%2 == 0: assert m.role == 'user'
+            else: assert m.role == 'assistant'
+    
+        models.llm_set_vocab(vocab, host)
+        messages = [msg.content for msg in self._hist]
+        out = models.llm_stream_chat(messages, host)
+
+        self._hist.append(Msg('assistant', ''))
+        self._awaiting_streamed = True
+
+        def tok_stream():
+            for tok in out:
+                _inc_tok_count('out', 1)
+                self._hist[-1].content += tok
+                yield tok
+
+            _inc_tok_count('out', 4) # 4 exta used in llama prompt format
+            self._awaiting_streamed = False
+
+        return tok_stream()
 
     def _call_fmted(self, messages, temperature, max_tokens, response_format):
         out = client.chat.completions.create(
@@ -163,7 +189,7 @@ class LLM:
 
         return out
 
-    def __call__(self, prompt, response_format:str|list|None=None, temperature=0, max_tokens=1024):
+    def __call__(self, prompt, response_format:str|list|None=None, temperature=0, max_tokens=1024, stream_mask_info=None):
         if self._awaiting_streamed:
             raise Exception('Cannot start a new message before ending a streamed one.')
 
@@ -180,6 +206,9 @@ class LLM:
             return self._call_default(messages, temperature, max_tokens)
         elif response_format == 'stream':
             return self._call_stream(messages, temperature, max_tokens)
+        elif response_format == 'stream_masked':
+            assert temperature == 0 # only 0 supported for now
+            return self._call_stream_masked(prompt, *stream_mask_info)
         elif is_resp_fmted:
             return self._call_fmted(messages, temperature, max_tokens, response_format)
         else:
