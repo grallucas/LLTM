@@ -10,7 +10,7 @@ following a more conversation pattern, intended to
 be used for reviewing known words.
 
 Pattern:
-    Q in english (or Finnish if enough vocab)
+    Q in english (or target language if enough vocab)
     User answers with words to review
     User makes a new sentence with words to review
     LLM responds with known words
@@ -18,7 +18,7 @@ Pattern:
 """
 
 class learning_llm:
-    def __init__(self, vocab, language='Finnish'):
+    def __init__(self, vocab, language):
         self.language = language
         self.sentence_llm = L.LLM("You are a helpfull assistant. "
                                   f"You respond using simple sentences in {language}")

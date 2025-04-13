@@ -1,11 +1,14 @@
-from transformers import VitsModel, AutoTokenizer
+from kokoro import KPipeline
+# from transformers import VitsModel, AutoTokenizer
 import torch
 import numpy as np
+import gc
 
-model = VitsModel.from_pretrained("facebook/mms-tts-fin")
-tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-fin")
+# model = VitsModel.from_pretrained("facebook/mms-tts-fin")
+# tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-fin")
+# model.to('cuda:0')
 
-model.to('cuda:0')
+pipeline = KPipeline(lang_code='i')
 
 def create_wav_header(num_channels, sample_rate, num_samples, bits_per_sample):
     byte_rate = sample_rate * num_channels * bits_per_sample // 8
@@ -30,19 +33,30 @@ def create_wav_header(num_channels, sample_rate, num_samples, bits_per_sample):
     return header
 
 def generate_audio(text):
-    text = text.replace('c', 'k').replace('w', 'v') # FIX FOR FINNISH. TODO: generalize to any lang
+    # text = text.replace('c', 'k').replace('w', 'v') # FIX FOR FINNISH. TODO: generalize to any lang
 
-    inputs = tokenizer(text, return_tensors="pt")
-    inputs = {k:v.to('cuda:0') for k,v in inputs.items()}
+    # inputs = tokenizer(text, return_tensors="pt")
+    # inputs = {k:v.to('cuda:0') for k,v in inputs.items()}
 
-    with torch.no_grad():
-        output = (model(**inputs).waveform[0]*32767.0).to('cpu').numpy().astype(np.int16)
+    # with torch.no_grad():
+    #     output = (model(**inputs).waveform[0]*32767.0).to('cpu').numpy().astype(np.int16)
+
+    text = text.replace('\n', ' ... ')
+    text = ''.join(c for c in text if c.isalpha() or c in ['.', '-', ','] or c.isspace())
+    print('tts:', text)
+    generator = pipeline(text, voice='if_sara', speed=0.85)
+    output = (next(generator).audio*32767.0).numpy().astype(np.int16)
 
     # FREE gpu memory
-    for k in list(inputs.keys()): del inputs[k]
+    # for k in list(inputs.keys()): del inputs[k]
+    del generator
+    gc.collect()
     torch.cuda.empty_cache()
 
-    return create_wav_header(1, model.config.sampling_rate, output.shape[-1], 16) + output.tobytes()
+    # sample_rate = model.config.sampling_rate
+    sample_rate = 24000
+
+    return create_wav_header(1, sample_rate, output.shape[-1], 16) + output.tobytes()
 
 # --- server :( ---
 

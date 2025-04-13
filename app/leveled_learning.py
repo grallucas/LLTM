@@ -38,7 +38,7 @@ The intended flow of this learning class is as follows:
 """
 
 class learning_llm:
-    def __init__(self, vocab, language='Finnish'):
+    def __init__(self, vocab, language):
         self.language = language
         self.vocab = vocab
         self.sentence_llm = L.LLM(f"You are a helpful assistant. You take a given {language} sentence "
