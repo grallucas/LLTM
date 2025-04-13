@@ -46,6 +46,15 @@ rev_btn.addEventListener('click', () => {
     document.getElementById('messages').removeChild(revMessageElement)
 });
 
+const fallback_switch = document.getElementById('fallback-switch');
+fallback_switch.addEventListener('click', () => {
+    if(fallback_switch.checked){
+        sockets.emit('set-llm-mode', 'unmasked');
+    }else{
+        sockets.emit('set-llm-mode', 'masked');
+    }
+});
+
 // --- SOCKET READING ---
 
 $('document').ready(()=>{
@@ -85,6 +94,8 @@ $('document').ready(()=>{
     sockets.on('srs-update', (srs_words)=>{
         toggleReviewWindow(srs_words)
     })
+    sockets.emit('set-llm-mode', 'unmasked');
+    fallback_switch.checked = true;
 });
 
 // --- MESSAGE SENDING ---
@@ -126,16 +137,44 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
         alert('Cannot send a message now')
     }
 
-    const key_map = {
-        'a': 'ä',
-        'A': 'Ä',
-        'o': 'ö',
-        'O': 'Ö'
+    // const key_map = {
+    //     'a': 'ä',
+    //     'A': 'Ä',
+    //     'o': 'ö',
+    //     'O': 'Ö'
+    // };
+    // if (evt.key in key_map && message.charAt(message.length - 1) === "'"){
+    //     evt.preventDefault();
+    //     userInput.value = message.slice(0,-1) + key_map[evt.key];
+    // }
+
+    const key_map_grave = {
+        'e': 'è',
+        'o': 'ò',
+        'a': 'à',
+        'u': 'ù',
+        'i': 'ì',
+        'E': 'È',
+        'O': 'Ò',
+        'A': 'À',
+        'U': 'Ù',
+        'I': 'Ì'
     };
 
-    if (evt.key in key_map && message.charAt(message.length - 1) === ':'){
+    const key_map_acute = {
+        'E': 'É',
+        'e': 'é'
+    };
+
+    if (evt.key === "'" && message.charAt(message.length - 1) in key_map_grave){
         evt.preventDefault();
-        userInput.value = message.slice(0,-1) + key_map[evt.key];
+        userInput.value = message.slice(0,-1) + key_map_grave[message.charAt(message.length - 1)];
+    }
+
+
+    if (evt.key === "`" && message.charAt(message.length - 1) in key_map_acute){
+        evt.preventDefault();
+        userInput.value = message.slice(0,-1) + key_map_acute[message.charAt(message.length - 1)];
     }
 });
 
@@ -336,12 +375,12 @@ function toggleClickableWindow(word, feedback_id='') {
 
 // --- MISC ---
 
-document.getElementById('view-stats').addEventListener('click', function() {
-    toggleStatsWindow();
-});
-document.getElementById('close-stats').addEventListener('click', function() {
-    toggleStatsWindow();
-});
+// document.getElementById('view-stats').addEventListener('click', function() {
+//     toggleStatsWindow();
+// });
+// document.getElementById('close-stats').addEventListener('click', function() {
+//     toggleStatsWindow();
+// });
 document.getElementById('close-clickable-window').addEventListener('click', function() {
     closeClickableWindow();
 });
@@ -376,10 +415,28 @@ document.querySelectorAll('.typer-button').forEach(button => {
         document.querySelector('#user-input').value += button.innerText;
     });
     const key_map = {
-        'ä': 'a',
-        'Ä': 'A',
-        'ö': 'o',
-        'Ö': 'O'
+        'è': "e'",
+        'ò': "o'",
+        'à': "a'",
+        'ù': "u'",
+        'ì': "i'",
+        'È': "E'",
+        'Ò': "O'",
+        'À': "A'",
+        'Ù': "U'",
+        'Ì': "I'",
+
+        'É': 'E`',
+        'é': 'e`'
     };
-    button.title = `TIP: type this via ":${key_map[button.innerText]}"`;
+
+    button.title = `Type this via:    ${key_map[button.innerText]}`;
+
+    // const key_map = {
+    //     'ä': 'a',
+    //     'Ä': 'A',
+    //     'ö': 'o',
+    //     'Ö': 'O'
+    // };
+    // button.title = `TIP: type this via ":${key_map[button.innerText]}"`;
 });
