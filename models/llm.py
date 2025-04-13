@@ -123,7 +123,7 @@ def get_next_allowed(given, trie):
 
 def stream_response(messages):
     # Should be fine to modify in place here
-    messages[0] += f"Your responses can only draw from this allowed vocab (but don't need to be lowercase): {vocab_raw}."
+    messages[0] += f"\n\nYour responses can only draw from this allowed vocab (but don't need to be lowercase): {vocab_raw}."
 
     # messages = [
     #     'You are an Italian language teacher named Rossi who teaches a learner (Lucas) via simple conversation.'
