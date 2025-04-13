@@ -53,7 +53,7 @@ LEARNER_NAME = 'Lucas' # obtained from user profile
 
 allowed_vocab += [TEACHER_NAME.lower(), LEARNER_NAME.lower()]
 
-def make_chat_llm(allowed_vocab):
+def make_chat_llm(allowed_vocab, language):
     # sys_prompt = (
     #     f'You are a Finnish teacher named {TEACHER_NAME}. I am a Finnish learner named {LEARNER_NAME}.' +
     #     '\nRespond to future messages with SINGLE, SHORT responses and nothing else. ' +
@@ -63,8 +63,9 @@ def make_chat_llm(allowed_vocab):
     # )
 
     sys_prompt = (
-        f'You are a Finnish language teacher named {TEACHER_NAME}. I am a Finnish learner named {LEARNER_NAME}.'
-        '\nUse lots of emojis. All of your responses must be grammatically correct Finnish.'
+        f'You are a {language} language teacher named {TEACHER_NAME}. '
+        # f'I am a {language} learner named {LEARNER_NAME}.'
+        f'\nUse lots of emojis. All of your responses must be grammatically correct {language}.'
         f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {allowed_vocab} and any emoji/punctuation.'
     )
 

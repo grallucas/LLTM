@@ -22,8 +22,8 @@ class learning_llm:
         self.language = language
         self.sentence_llm = L.LLM("You are a helpfull assistant. "
                                   f"You respond using simple sentences in {language}")
-        self.question_llm = L.LLM(f'You are a Finnish language teacher named Rossi. '
-        '\nUse lots of emojis. All of your responses must be grammatically correct Finnish.'
+        self.question_llm = L.LLM(f'You are a {language} language teacher named Rossi. '
+        f'\nUse lots of emojis. All of your responses must be grammatically correct {language}.'
         f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.')
 
         self.translate_llm = L.LLM(f"You are a helpful assistant. You translate {language} words into English.")

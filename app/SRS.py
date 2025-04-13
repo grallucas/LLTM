@@ -28,7 +28,8 @@ class SRS:
     """
     def add_card(self, word : str):
         card = Card()
-        self.words[word] = card
+        if word not in self.words:
+            self.words[word] = card
 
     def get_due(self, word : str):
         return self.words[word].due
@@ -77,17 +78,18 @@ class SRS:
     """
     def review_card(self, word: str, rating : str, review_datetime: datetime | None = None) -> ReviewLog:
         rating = rating.lower()
-        card = self.words.get(word, Card())
-        if rating == 'again':
-            card, review_log = self.f.review_card(card, Rating.Again, review_datetime)
-            self.words[word] = card # update card
-            return review_log
-        elif rating == 'good':
-            card, review_log = self.f.review_card(card, Rating.Good)
-            self.words[word] = card  # update card
-            return review_log
-        else:
-            raise Exception("Rating was not 'again' or 'good'")
+        if word in self.words:
+            card = self.words.get(word, Card())
+            if rating == 'again':
+                card, review_log = self.f.review_card(card, Rating.Again, review_datetime)
+                self.words[word] = card # update card
+                return review_log
+            elif rating == 'good':
+                card, review_log = self.f.review_card(card, Rating.Good)
+                self.words[word] = card  # update card
+                return review_log
+            else:
+                raise Exception("Rating was not 'again' or 'good'")
 
     def num_words(self) -> int:
         return len(self.words)
