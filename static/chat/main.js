@@ -231,17 +231,17 @@ function toggleReviewWindow(words) {
         window.replaceChildren()
         window.style.display = ''
         const newWordElement = document.createElement('div');
-        newWordElement.innerHTML = '<button><b>Click</b> to add new words</button>';
+        newWordElement.innerHTML = '<button><b>Click</b> to add five new words</button>';
         const newWordButton = newWordElement.querySelector('button');
         newWordButton.addEventListener('click', () => {
-            fetch(`/addwords/${identity}`);
-            // update review screen
-            srs_due_str = fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
+            fetch(`/addwords/${identity}`).then(() => {
+                fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
+            });
         });
         document.getElementById('review-window').appendChild(newWordElement)
         
         const msgPara = document.createElement('p');
-        msgPara.textContent = 'Use or look up each word to check it off!';
+        msgPara.textContent = 'Use a word below correctly a few times to check it off! We recommend adding five new words per day.';
         window.appendChild(msgPara);
 
         const hr = document.createElement('hr');

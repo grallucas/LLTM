@@ -11,7 +11,8 @@ Note: words in list should match with the passed language
 class language_progress():
     def __init__(self, intro_words : list, language : str):
         self.language = language
-        self.intro_words = list(set(intro_words)) #no duplicates
+        assert len(intro_words) == len(set(intro_words)) # no duplicates
+        self.intro_words = intro_words
         self.known_words = [] #keep track of words that have been learned
     
     def get_new_word(self) -> str:
@@ -52,7 +53,14 @@ class language_progress():
 
 
 # Taken from: https://duome.eu/vocabulary/en/it/skills
+# Added basics-0 for simple greetings 
 intro_words = [
+    #basics-0
+    'ciao',
+    'io',
+    'sono',
+    'tu',
+    'e',
     #basics-1
     'acqua',
     'beve',
@@ -61,7 +69,6 @@ intro_words = [
     'donna',
     'è',
     'il',
-    'io',
     'l\'',
     'la ',
     'lei',
@@ -73,7 +80,6 @@ intro_words = [
     'pane',
     'ragazza',
     'ragazzo',
-    'tu',
     'un',
     'una',
     'uomo',
@@ -112,7 +118,6 @@ intro_words = [
     'scrivono',
     'siamo',
     'siete',
-    'sono',
     'uomini',
     'voi'
 ]

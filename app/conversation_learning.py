@@ -20,8 +20,8 @@ Pattern:
 class learning_llm:
     def __init__(self, vocab, language):
         self.language = language
-        self.sentence_llm = L.LLM("You are a helpfull assistant. "
-                                  f"You respond using simple sentences in {language}")
+        # self.sentence_llm = L.LLM("You are a helpfull assistant. "
+        #                           f"You respond using simple sentences in {language}")
         self.question_llm = L.LLM(f'You are a {language} language teacher named Rossi. '
         f'\nUse lots of emojis. All of your responses must be grammatically correct {language}.'
         f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.')
@@ -38,17 +38,21 @@ class learning_llm:
             max_tokens=None,
             temperature=0.1,
             # verbose=False
-            )
-        return (s)
+        )
+        return s
     
     def get_question(self, target_word):
+        prompt = f'Use only the allowed vocabulary to write a question for which a reply can include the target word: "{target_word}"'
+        # if target_word == 'ciao':
+        #     prompt = 'Use only the allowed vocabulary, and ask the user to introduce themself.'
+        print('q prompt:', prompt)
         q = self.question_llm(
-            f"Write a question that a reply can include the target word {target_word}",
+            prompt,
             response_format='stream',
             max_tokens=None,
             temperature=0.1,
             # verbose=False
-            )
+        )
         return q
     
     # not used
