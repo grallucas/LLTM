@@ -225,7 +225,7 @@ function toggleReviewWindow(words) {
     //     window.style.display = 'none'
     //     return
     // }
-    if (words.length == 0) {
+    if (words.length == -Infinity) {
         window.style.display = 'none'
     } else {
         window.replaceChildren()
