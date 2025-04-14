@@ -1,4 +1,4 @@
-const socketHost = "http://localhost:8001";
+const socketHost = `http://${location.host}`;
 
 let identity = localStorage.getItem('rossi_identity');
 if (!identity) {

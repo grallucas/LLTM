@@ -22,15 +22,27 @@ class learning_llm:
         self.language = language
         # self.sentence_llm = L.LLM("You are a helpfull assistant. "
         #                           f"You respond using simple sentences in {language}")
+        
+        # self.question_llm = L.LLM()
+        # self.update_prompt_vocab()
+
         self.question_llm = L.LLM(f'You are a {language} language teacher named Rossi. '
         f'\nUse lots of emojis. All of your responses must be grammatically correct {language}.'
         f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.')
+
 
         self.translate_llm = L.LLM(f"You are a helpful assistant. You translate {language} words into English.")
         self.eval_llm = L.LLM("You are a helpful assistant. "
                  f"You are given questions and answers to sentences in {language} and determine if they are correct."
                  "Speak directly to the user.")
     
+    def update_prompt_vocab(self, vocab):
+        self.question_llm._hist[0].content = (
+            f'You are a {self.language} language teacher named Rossi. '
+            f'\nUse lots of emojis. All of your responses must be grammatically correct {self.language}.'
+            f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.'
+        )
+
     def get_sentence(self, prompt):
         s = self.question_llm(
             f"Respond to the prompt \"{prompt}\" in an engaging way.",
