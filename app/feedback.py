@@ -56,7 +56,7 @@ def grade_per_word(sentence, language):
 
         llm.restore_state(s) # we shouldn't keep all words in history while grading them
 
-    return words, incorrect, s
+    return words, incorrect, s, cot
 
 def get_word_feedback(idx, words, state):
     llm = L.LLM()

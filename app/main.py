@@ -15,7 +15,7 @@ import lexicon
 import translate
 import feedback
 import chat
-import leveled_learning
+# import leveled_learning
 import conversation_learning
 import language_progress
 
@@ -29,6 +29,8 @@ ROOT = Path.cwd().as_posix()
 TTS_URL, IMG_GEN_URL, MASKED_LLM_URL = sys.argv[-1].split(',')
 PORT = sys.argv[-2]
 L.TOKEN_COUNT_PATH = '/data/ai_club/team_3_2024-25/tokcounts2/'
+
+TEACHER_NAME = 'Rossi'
 
 # TODO: cache on disk
 tts_words = {}
@@ -68,6 +70,9 @@ tomorrow = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(day
 
 def clean_word(s):
     return ''.join(c for c in s.lower().strip() if c.isalpha())
+
+def get_allowed_vocab(srs):
+    return list(srs.get_words().keys())
 
 @app.route('/')
 def main():
@@ -159,7 +164,7 @@ def gen_feedback(identity):
 
     feedback_msgs_idx = feedback_msgs[identity].__len__()
 
-    words, incorrect, state = feedback.grade_per_word(prompt, session_language)
+    words, incorrect, state, summary = feedback.grade_per_word(prompt, session_language)
     per_word = {}
     for i in incorrect:
         per_word[i] = (state, words) # save data to stream explanations later
@@ -172,11 +177,11 @@ def gen_feedback(identity):
 
     feedback_msgs[identity].append(per_word)
 
-    
     return {
         'words': words,
         'word_feedbacks': incorrect,
-        'feedback_id': feedback_msgs_idx
+        'feedback_id': feedback_msgs_idx,
+        'summary': summary
     }
 
 @app.route('/feedback/<identity>/get/<idx>')
@@ -225,13 +230,14 @@ def set_llm_mode(mode):
 @socketio.on("chat-interface")
 def chat_interface(prompt):
     if global_mode[session['identity']] == 'conversing':
+        allowed_vocab = get_allowed_vocab(global_srs[session['identity']]) + [TEACHER_NAME, session['identity']]
         if 'chat' not in session:
-            session['chat'] = chat.make_chat_llm(language_progress.intro_words, session_language)
+            session['chat'] = chat.make_chat_llm(allowed_vocab, TEACHER_NAME, session_language)
         llm = session['chat']
         if session['llm-mode'] == 'unmasked':
             s = llm(prompt, response_format='stream', max_tokens=8000, temperature=0.15)
         if session['llm-mode'] == 'masked':
-            s = llm(prompt, response_format='stream_masked', stream_mask_info=(chat.allowed_vocab, MASKED_LLM_URL))
+            s = llm(prompt, response_format='stream_masked', stream_mask_info=(allowed_vocab, MASKED_LLM_URL))
         msg = ''
         emit("chat-interface", '<START>')
         for tok in s:
@@ -286,7 +292,7 @@ def review_mode():
     global_mode[session['identity']] = 'learning' 
     initialize(session['identity'])
     if 'learning-llm' not in session:
-        session['learning-llm'] = conversation_learning.learning_llm(list(global_srs[session['identity']].get_words().keys()), session_language)
+        session['learning-llm'] = conversation_learning.learning_llm(get_allowed_vocab(global_srs[session['identity']]), session_language)
     # update review screen with new due words
     update_review_panel(global_srs[session['identity']])
     learning_convo('', session['identity'], session['learning-llm']) 

@@ -1,6 +1,12 @@
 const socketHost = "http://localhost:8001";
 
-const identity = "example.identity";
+let identity = localStorage.getItem('rossi_identity');
+if (!identity) {
+    identity = prompt('What should Rossi call you?');
+    localStorage.setItem('rossi_identity', identity);
+}
+// const identity = "example.identity";
+
 var sockets;
 var sendDisable = true;
 
@@ -120,7 +126,8 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
         feedback.then(r => r.json()).then(data => {
             const words = data['words']
             const word_feedbacks = data['word_feedbacks'];
-            const feedback_id = data['feedback_id']
+            const feedback_id = data['feedback_id'];
+            const summary = data['summary'];
 
             words.forEach((w,i) => {
                 if (Object.values(word_feedbacks).includes(i)){
@@ -130,7 +137,16 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
                 }
             });
             
-            userMsg.innerHTML = words.join(' ');
+
+            const feedback_button = document.createElement('button');
+            feedback_button.textContent = 'See Raw Feedback';
+            feedback_button.addEventListener('click', () => {
+                alert('NOTE: the conversation is currently not used as context for feedback.\n\n'+summary);
+            });
+
+            userMsg.innerHTML = words.join(' ') + '<br><br>';
+            userMsg.appendChild(feedback_button)
+
             fetch(`/srs-due-before-tomorrow/${identity}`).then(data => data.text()).then(data => toggleReviewWindow(data));
         }).catch(e => console.log(e));;
     }else if(sendDisable){
@@ -304,6 +320,12 @@ function toggleClickableWindow(word, feedback_id='') {
                 </div>
                 <!-- <textarea id="imggen-input" placeholder="Generate an Image..." style="resize: vertical; word-wrap: break-word; white-space: pre-wrap;"></textarea> -->
             </details>
+            
+            <hr class="thick-line">
+
+            <p><b>TIP:</b> If you think you can guess the meaning before looking it up, give that a shot. You'll realize you know more than you think.</p>
+            <br>
+            <p><b>TIP:</b> Try pronouncing the word yourself. This will help with remembering it.</p>
         `;
 
         clickableWindow.style.display = 'block';
