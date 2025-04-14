@@ -22,14 +22,9 @@ class learning_llm:
         self.language = language
         # self.sentence_llm = L.LLM("You are a helpfull assistant. "
         #                           f"You respond using simple sentences in {language}")
-        
-        # self.question_llm = L.LLM()
-        # self.update_prompt_vocab()
 
-        self.question_llm = L.LLM(f'You are a {language} language teacher named Rossi. '
-        f'\nUse lots of emojis. All of your responses must be grammatically correct {language}.'
-        f'\n\nIMPORTANT: Your responses must only use words in this allowed vocab: {vocab} and any emoji/punctuation.')
-
+        self.question_llm = L.LLM('Tell the user that SOMETHING HAS GONE WRONG')
+        self.update_prompt_vocab(vocab)
 
         self.translate_llm = L.LLM(f"You are a helpful assistant. You translate {language} words into English.")
         self.eval_llm = L.LLM("You are a helpful assistant. "
@@ -45,7 +40,7 @@ class learning_llm:
 
     def get_sentence(self, prompt):
         s = self.question_llm(
-            f"Respond to the prompt \"{prompt}\" in an engaging way.",
+            f"Respond to the prompt \"{prompt}\" in an engaging way using only the allowed vocab.",
             response_format='stream',
             max_tokens=None,
             temperature=0.1,
@@ -54,9 +49,9 @@ class learning_llm:
         return s
     
     def get_question(self, target_word):
-        prompt = f'Use only the allowed vocabulary to write a question for which a reply can include the target word: "{target_word}"'
-        # if target_word == 'ciao':
-        #     prompt = 'Use only the allowed vocabulary, and ask the user to introduce themself.'
+        prompt = f'Use only the allowed vocabulary to write a NEW question for which a reply can include the target word: "{target_word}"'
+        if target_word == 'ciao':
+            prompt = 'Use only the allowed vocabulary, and simply ask the user to introduce themself "Ciao! Io sono Rossi. Tu?"'
         print('q prompt:', prompt)
         q = self.question_llm(
             prompt,

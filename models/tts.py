@@ -41,11 +41,17 @@ def generate_audio(text):
     # with torch.no_grad():
     #     output = (model(**inputs).waveform[0]*32767.0).to('cpu').numpy().astype(np.int16)
 
-    text = text.replace('\n', ' ... ')
-    text = ''.join(c for c in text if c.isalpha() or c in ['.', '-', ','] or c.isspace())
+    # text = text.replace('\n', ' . ')
+    text = ''.join(c for c in text if c.isalpha() or c in ['.', '-', ',', '!', '?'] or c.isspace())
     print('tts:', text)
-    generator = pipeline(text, voice='if_sara', speed=0.85)
-    output = (next(generator).audio*32767.0).numpy().astype(np.int16)
+    generator = pipeline(text, voice='if_sara', speed=0.8)
+    output = None
+    for _, _, audio in generator:
+        audio = (audio*32767.0).numpy().astype(np.int16)
+        if output is None:
+            output = audio
+        else:
+            output = np.concatenate([output, audio])
 
     # FREE gpu memory
     # for k in list(inputs.keys()): del inputs[k]

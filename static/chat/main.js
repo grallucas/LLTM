@@ -26,7 +26,7 @@ function format_msg(text) {
 // --- INIT ---
 
 const convMessageElement = document.createElement('div');
-convMessageElement.innerHTML = '<button><b>Click</b> to Start the Conversing!</button>';
+convMessageElement.innerHTML = '<button><b>Click</b> to Start Conversing With What You Know!</button>';
 convMessageElement.classList.add('bot-message');
 convMessageElement.classList.add('message');
 document.getElementById('messages').appendChild(convMessageElement);
@@ -39,7 +39,7 @@ conv_btn.addEventListener('click', () => {
 });
 
 const revMessageElement = document.createElement('div');
-revMessageElement.innerHTML = '<button><b>Click</b> to Start the Learning!</button>';
+revMessageElement.innerHTML = '<button><b>Click</b> to Start Learning Words!</button>';
 revMessageElement.classList.add('bot-message');
 revMessageElement.classList.add('message');
 document.getElementById('messages').appendChild(revMessageElement);
@@ -141,7 +141,7 @@ document.getElementById('user-input').addEventListener('keypress', function(evt)
             const feedback_button = document.createElement('button');
             feedback_button.textContent = 'See Raw Feedback';
             feedback_button.addEventListener('click', () => {
-                alert('NOTE: the conversation is currently not used as context for feedback.\n\n'+summary);
+                alert('NOTE: the conversation is currently not used as context for feedback. We\'re working on it...\n\n'+summary);
             });
 
             userMsg.innerHTML = words.join(' ') + '<br><br>';
@@ -241,7 +241,7 @@ function toggleReviewWindow(words) {
         document.getElementById('review-window').appendChild(newWordElement)
         
         const msgPara = document.createElement('p');
-        msgPara.textContent = 'Use a word below correctly a few times to check it off! We recommend adding five new words per day.';
+        msgPara.textContent = 'Use a word below correctly a few times to check it off! We recommend adding five new words per day. You can add more before fully reviewing current ones.';
         window.appendChild(msgPara);
 
         const hr = document.createElement('hr');

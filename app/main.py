@@ -22,6 +22,8 @@ import language_progress
 import SRS
 import datetime
 
+import random
+
 app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
@@ -272,7 +274,7 @@ def initialize(identity):
         global_language_progress[identity] = lp
         srs = SRS.SRS()
         global_srs[identity] = srs
-        add_words(5, srs, lp)
+        add_words(10, srs, lp)
         
 def add_words(num_words : int, srs : SRS.SRS, lp : language_progress.language_progress) -> None:
     for i in range(num_words):
@@ -298,6 +300,9 @@ def review_mode():
     learning_convo('', session['identity'], session['learning-llm']) 
 
 def learning_convo(prompt, identity, learning_llm):
+    # Refresh vocab EVERY time. Not ideal, but works
+    learning_llm.update_prompt_vocab(get_allowed_vocab(global_srs[session['identity']]) + [TEACHER_NAME, session['identity']])
+
     if prompt == '':
         # convo_introduction() TODO let's do something better than a big text wall
         # llm starts with question
@@ -318,14 +323,25 @@ def learning_convo(prompt, identity, learning_llm):
         emit("chat-interface", '<TTS>')
         print('CTX HISTORY:', ctx_msgs)
 
+mandatory_ciao_todo = 1 # JANK ALERT right here
+
 def get_target_word(srs):
+    global mandatory_ciao_todo
     target_word = ''
-    if len(srs.get_due_before_date(tomorrow)) != 0:
-        target_word = srs.get_due_before_date(tomorrow)[0] 
-    elif srs.num_words() != 0:
-        list(srs.get_words())[0]
-    else:
-        return '' #TODO take lp and generate a new word
+    due = srs.get_due_before_date(tomorrow)
+    
+    if mandatory_ciao_todo == -1:
+        due.remove('ciao')
+        mandatory_ciao_todo = 0
+    if 'ciao' in due and mandatory_ciao_todo==1:
+        target_word = 'ciao'
+        mandatory_ciao_todo = -1
+    elif len(due) != 0:
+        target_word = random.choice(due)
+    # elif srs.num_words() != 0:
+    #     list(srs.get_words())[0]
+    # else:
+    #     return '' #TODO take lp and generate a new word
     print('target word =', target_word) #TODO clean up
     return target_word
 

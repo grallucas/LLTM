@@ -61,6 +61,11 @@ intro_words = [
     'sono',
     'tu',
     'e',
+    'sì',
+    'no',
+    'amico',
+    'amici',
+    'sei',
     #basics-1
     'acqua',
     'beve',
