@@ -1,0 +1,325 @@
+body, html {
+    font-family: Arial, sans-serif;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    background-color: var(--clr-surface-tonal-a0);
+}
+
+button {
+    padding: 10px;
+    background-color: var(--clr-surface-tonal-a0);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+button:hover {
+    background-color: var(--clr-primary-a0);
+}
+
+a {
+    color: aqua;
+}
+
+a:visited {
+    color:magenta;
+}
+
+summary:hover {
+    background-color: var(--clr-surface-tonal-a30);
+    transition: 0.2s;
+}
+
+summary {
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer
+}
+
+#chat-buttons {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+.center {
+    text-align: center;
+}
+
+#view-stats {
+    flex-grow: 1;
+}
+
+#messages {
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    padding: 20px;
+    border-radius: 10px;
+    margin: 5px 0;
+    max-width: 60%;
+    word-wrap: break-word;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: var(--clr-surface-tonal-a20);
+}
+
+.bot-message {
+    align-self: flex-start;
+    background-color: var(--clr-surface-tonal-a10);
+}
+
+.feedback-underline {
+    text-decoration: underline;
+    text-decoration-color: rgb(53, 217, 255);
+    text-decoration-thickness: 5px;
+}
+
+.word {
+    cursor: pointer;
+}
+
+.spinner {
+    width: 1em;
+    height: 1em;
+
+    display: inline-block;
+    margin-left: 1em;
+    
+    border: 5px solid #fff;
+    border-bottom-color: rgba(0,0,0,0);
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* .user-message::before {
+    content: 'You: '
+}
+
+.bot-message::before {
+    content: 'ȒȰṦḜ: '
+} */
+
+.thick-line {
+    border: none;
+    height: 1px;
+    background-color: #000;
+}
+
+#review-window {
+    padding: 20px;
+    width: 300px;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    background-color: var(--clr-surface-tonal-a10);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-left: 20px;
+    overflow-y: scroll;
+    max-height: 100vh;
+}
+
+#chatbot {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--clr-surface-tonal-a10);
+    display: flex;
+    flex-direction: column;
+}
+
+#chat-window {
+    font-size: 1.25em;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    padding: 10px;
+    background-color: var(--clr-surface-tonal-a0);
+    position: relative; /* Added for positioning the image */
+}
+
+#user-input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    color: white;
+    background-color: var(--clr-surface-tonal-a0);
+    font-size: 1em;
+}
+
+textarea {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    color: white;
+    background-color: var(--clr-surface-tonal-a0);
+}
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#stats-window {
+    
+    border: 1px solid var(--clr-surface-tonal-a30);
+    background-color: #ff00ff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    width: 80vw;
+    height: 90vh;
+    
+}
+#container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+    background: var(--clr-surface-tonal-a0);
+}
+#clickable-window {
+    width: 300px;
+    padding: 20px;
+    border: 1px solid var(--clr-surface-tonal-a30);
+    background-color: var(--clr-surface-tonal-a10);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 20px; /* Space between clickable window and chat window */
+    position: relative;
+
+    /* overflow-y: scroll;
+    height: 100vh; */
+}
+#close-button-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+#close-clickable-window {
+    background-color: var(--clr-surface-tonal-a0);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#close-clickable-window:hover {
+    background-color: var(--clr-primary-a30);
+}
+
+#corner-image {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+#messages {
+    height: calc(100% - 0px); /* Adjust height to leave space for the image */
+    overflow-y: auto;
+}
+
+#stats {
+    width: 80vw;
+    height: 90vh;
+}
+
+#close-stats {
+    position: fixed;
+    float:right;
+    top:0;
+    right:0;
+    border-radius: 25px;
+    border: 2px solid var(--clr-surface-tonal-a30);
+}
+
+ .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  input:checked + .slider {
+    background-color: var(--clr-primary-a0);
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px var(--clr-primary-a0);
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
+  
+  .slider.round {
+    border-radius: 34px;
+  }
+  
+  .slider.round:before {
+    border-radius: 50%;
+  } 

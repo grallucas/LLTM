@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Colloquy</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../common.css">
+</head>
+<body>
+<div id="container">
+    <div id="clickable-window" style="display: none;">
+        <button id="close-clickable-window">Close</button>
+        <h2>Clickable Word</h2>
+        <p>This is where the clickable word content will be displayed.</p>
+    </div>
+    <div id="chatbot">
+        <div id="chat-window">
+            <div id="messages"></div>
+            <img id="corner-image" src="res/hotgirl.jpg" alt="Corner Image">
+        </div>
+        <input type="text" id="user-input" placeholder="Type a message (or send an empty message to continue the conversation)..." />
+        <div id="chat-buttons">
+            <!-- <button class="typer-button">Ä</button>
+            <button class="typer-button">ä</button>
+            <button class="typer-button">Ö</button>
+            <button class="typer-button">ö</button> -->
+
+            <button class="typer-button">è</button> <!--e'-->
+            <button class="typer-button">é</button> <!--e`-->
+            <button class="typer-button">ò</button> <!--o'-->
+            <button class="typer-button">à</button> <!--a'-->
+            <button class="typer-button">ù</button> <!--u'-->
+            <button class="typer-button">ì</button> <!--i'-->
+
+            <button class="typer-button">È</button> <!--E'-->
+            <button class="typer-button">É</button> <!--E`-->
+            <button class="typer-button">Ò</button> <!--O'-->
+            <button class="typer-button">À</button> <!--A'-->
+            <button class="typer-button">Ù</button> <!--U'-->
+            <button class="typer-button">Ì</button> <!--I'-->
+
+            <span style="flex-grow:1;"></span>
+            <label class="switch">
+                <input type="checkbox" id="fallback-switch">
+                <span class="slider round"></span>
+            </label>
+            <div style="margin: auto;margin-left: 10px; color: #ccc;">Use fallback non-masking LLM (faster & less buggy, but some unknown vocab can slip thru)</div>
+            <!-- <button id="view-stats">View Stats</button> -->
+        </div>
+    </div>
+    <div id="review-window" style="display:none;">
+        <!-- <p>This is where review owrds will be displayed.</p> -->
+    </div>
+    <div id="overlay" style="display: none;">
+        <span id="close-stats" class="material-icons-outlined">close</span>
+        <div id="stats-window">
+            <iframe id="stats" src="" ></iframe>
+            <!-- <iframe id="stats" src="../stats/index.html" ></iframe> -->
+        </div>  
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+<script src="main.js"></script>
+</body>
+</html>
