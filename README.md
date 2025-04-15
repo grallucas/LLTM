@@ -3,9 +3,8 @@ Colloquy
 
 <p style="text-align:center;">
 <img src="./rossi.png" width=400>
+<i>Figure 1: Rossi, our mascot.</i>
 </p>
-
-*Figure 1: Rossi, our mascot.*
 
 ---
 
