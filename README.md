@@ -1,7 +1,7 @@
 Colloquy
 ===
 
-<img src="./rossi.png" width=400>
+<img src="./colly.png" width=400>
 
 *Figure 1: Colly, our mascot.*
 
