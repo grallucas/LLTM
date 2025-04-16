@@ -3,7 +3,7 @@ Colloquy
 
 <img src="./rossi.png" width=400>
 
-*Figure 1: Rossi, our mascot.*
+*Figure 1: Colly, our mascot.*
 
 ---
 
